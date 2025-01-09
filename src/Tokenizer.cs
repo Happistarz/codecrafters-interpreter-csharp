@@ -1,10 +1,11 @@
-﻿using UTILS;
+﻿using System.Globalization;
+using UTILS;
 
 namespace Token;
 
 public class Tokenizer(string _content)
 {
-    public static readonly Dictionary<string, TokenType> KEYWORDS =
+    private static readonly Dictionary<string, TokenType> _KEYWORDS =
         new()
         {
             { "and", TokenType.AND },
@@ -25,49 +26,48 @@ public class Tokenizer(string _content)
             { "while", TokenType.WHILE }
         };
 
-    private string      content     = _content;
-    private List<Token> tokens      = [];
-    private int         start       = 0;
-    private int         current     = 0;
-    private int         line        = 1;
-    private int         return_code = 0;
+    private readonly List<Token> _tokens = [];
+    private          int         _start;
+    private          int         _current;
+    private          int         _line = 1;
+    private          int         _returnCode;
 
     private bool IsAtEnd()
     {
-        return current >= content.Length;
+        return _current >= _content.Length;
     }
 
     public int GetReturnCode()
     {
-        return return_code;
+        return _returnCode;
     }
 
     public List<Token> GetTokens()
     {
-        return tokens;
+        return _tokens;
     }
 
     private char Peek()
     {
-        return IsAtEnd() ? '\0' : content[current];
+        return IsAtEnd() ? '\0' : _content[_current];
     }
 
     private char PeekNext()
     {
-        return current + 1 >= content.Length ? '\0' : content[current + 1];
+        return _current + 1 >= _content.Length ? '\0' : _content[_current + 1];
     }
 
     private char Advance()
     {
-        return content[current++];
+        return _content[_current++];
     }
 
     private void AddToken(TokenType _type, object? _literal = null)
     {
-        var text = content.Substring(start, current - start);
-        tokens.Add(new Token(_type, text, _literal, line));
+        var text = _content.Substring(_start, _current - _start);
+        _tokens.Add(new Token(_type, text, _literal, _line));
     }
-        
+
     private bool Match(char _expected)
     {
         if (IsAtEnd())
@@ -75,12 +75,12 @@ public class Tokenizer(string _content)
             return false;
         }
 
-        if (content[current] != _expected)
+        if (_content[_current] != _expected)
         {
             return false;
         }
 
-        current++;
+        _current++;
         return true;
     }
 
@@ -88,11 +88,11 @@ public class Tokenizer(string _content)
     {
         while (!IsAtEnd())
         {
-            start = current;
+            _start = _current;
             ScanToken();
         }
 
-        tokens.Add(new Token(TokenType.EOF, "", default, line));
+        _tokens.Add(new Token(TokenType.EOF, "", default, _line));
     }
 
     private void ScanToken()
@@ -124,27 +124,28 @@ public class Tokenizer(string _content)
             case '.':
                 AddToken(TokenType.DOT);
                 break;
-            case ',': 
+            case ',':
                 AddToken(TokenType.COMMA);
                 break;
-            case ';': 
+            case ';':
                 AddToken(TokenType.SEMICOLON);
                 break;
             case '=':
                 AddToken(Match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
                 break;
-            case '!': 
+            case '!':
                 AddToken(Match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
                 break;
-            case '<': 
+            case '<':
                 AddToken(Match('=') ? TokenType.LESS_EQUAL : TokenType.LESS);
                 break;
-            case '>': 
+            case '>':
                 AddToken(Match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
                 break;
-            case '/': 
+            case '/':
                 if (Match('/'))
-                    while (Peek() != '\n' && !IsAtEnd()) Advance();
+                    while (Peek() != '\n' && !IsAtEnd())
+                        Advance();
                 else
                     AddToken(TokenType.SLASH);
                 break;
@@ -157,7 +158,7 @@ public class Tokenizer(string _content)
             case '\t':
                 break;
             case '\n':
-                line++;
+                _line++;
                 break;
             default:
                 if (Utils.IsDigit(c))
@@ -165,15 +166,15 @@ public class Tokenizer(string _content)
                     Number();
                     break;
                 }
-                
+
                 if (Utils.IsAlpha(c))
                 {
                     Identifier();
                     break;
                 }
-                    
-                Utils.Error(line, "Unexpected character: " + c);
-                return_code = 65;
+
+                Utils.Error(_line, "Unexpected character: " + c);
+                _returnCode = 65;
                 break;
         }
     }
@@ -184,44 +185,47 @@ public class Tokenizer(string _content)
         {
             if (Peek() == '\n')
             {
-                line++;
+                _line++;
             }
+
             Advance();
         }
-        
+
         if (IsAtEnd())
         {
-            Utils.Error(line, "Unterminated string.");
-            return_code = 65;
+            Utils.Error(_line, "Unterminated string.");
+            _returnCode = 65;
             return;
         }
-        
+
         Advance();
-        
-        var value = content.Substring(start + 1, current - start - 2);
+
+        var value = _content.Substring(_start + 1, _current - _start - 2);
         AddToken(TokenType.STRING, value);
     }
 
     private void Number()
     {
-        while(Utils.IsDigit(Peek())) Advance();
-        
+        while (Utils.IsDigit(Peek())) Advance();
+
         if (Peek() == '.' && Utils.IsDigit(PeekNext()))
         {
             Advance();
             while (Utils.IsDigit(Peek())) Advance();
         }
-        
-        var value = double.Parse(content.Substring(start, current - start));
+
+        var value = double.Parse(
+            _content.Substring(_start, _current - _start).Replace(',', '.')
+                                 , CultureInfo.InvariantCulture);
         AddToken(TokenType.NUMBER, value);
     }
-    
+
     private void Identifier()
     {
         while (Utils.IsAlphaNumeric(Peek())) Advance();
-        
-        var text = content.Substring(start, current - start);
-        var type = KEYWORDS.GetValueOrDefault(text, TokenType.IDENTIFIER);
+
+        var text = _content.Substring(_start, _current - _start);
+        var type = _KEYWORDS.GetValueOrDefault(text, TokenType.IDENTIFIER);
         AddToken(type);
     }
 }

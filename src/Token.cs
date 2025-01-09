@@ -1,4 +1,6 @@
-﻿namespace Token;
+﻿using System.Globalization;
+
+namespace Token;
 
 public enum TokenType
 {
@@ -63,13 +65,26 @@ public class Token(TokenType _type, string _lexeme, object? _literal, int _line)
         return $"{Type} {Lexeme} {GetLiteralString()}";
     }
     
+    // 123
+    // 123.456
+    // .456
+    // 123.
+
+    // expect: NUMBER 123 123.0
+    // expect: NUMBER 123.456 123.456
+    // expect: DOT . null
+    // expect: NUMBER 456 456.0
+    // expect: NUMBER 123 123.0
+    // expect: DOT . null
+    // expect: EOF  null
+    
     private string GetLiteralString()
     {
         return Literal switch
         {
             null     => "null",
             string s => s,
-            double d => d.ToString("F1"),
+            double d => d % 1 == 0 ? d.ToString("F1") : d.ToString(CultureInfo.InvariantCulture),
             _        => throw new Exception("Unknown literal type")
         };
     }
