@@ -160,6 +160,7 @@ namespace Token
                 default:
                     
                     Utils.Error(line, "Unexpected character: " + c);
+                    return_code = 65;
                     break;
             }
         }
