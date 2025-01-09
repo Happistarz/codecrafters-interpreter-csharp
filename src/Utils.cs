@@ -1,4 +1,7 @@
-﻿namespace UTILS;
+﻿using System.Globalization;
+using System.Text;
+
+namespace UTILS;
 
 public static class Utils
 {
@@ -20,5 +23,17 @@ public static class Utils
     public static bool IsAlphaNumeric(char _c)
     {
         return IsAlpha(_c) || IsDigit(_c);
+    }
+    
+    public static string GetLiteralString(object? _value, string _nullString = "nil")
+    {
+        return _value switch
+        {
+            null     => _nullString,
+            string s => s,
+            double d => d % 1 == 0 ? d.ToString("F1") : d.ToString(CultureInfo.InvariantCulture),
+            bool b   => b.ToString().ToLower(),
+            _        => throw new Exception("Unexpected value type.")
+        };
     }
 }

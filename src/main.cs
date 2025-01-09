@@ -1,4 +1,5 @@
 
+using AST;
 using Token;
 
 if (args.Length < 2)
@@ -37,7 +38,10 @@ if (!string.IsNullOrEmpty(fileContents))
             tokenizer.Scan();
             
             Parser.Parser parser = new(tokenizer.GetTokens());
-            parser.Parse();
+            var expression = parser.Parse();
+            Console.WriteLine(Interpreter.Interpret(expression));
+            
+            Environment.Exit(0);
             break;
         }
         default:
