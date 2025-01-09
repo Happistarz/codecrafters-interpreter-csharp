@@ -64,7 +64,7 @@ namespace Token
 
         private void AddToken(TokenType _type, object? _literal = null)
         {
-            var text = content.Substring(start, current);
+            var text = content.Substring(start, current - start);
             tokens.Add(new Token(_type, text, _literal, line));
         }
         

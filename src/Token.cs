@@ -60,6 +60,17 @@ public class Token(TokenType _type, string _lexeme, object? _literal, int _line)
     
     public override string ToString()
     {
-        return $"{Type} {Lexeme} {Literal}";
+        return $"{Type} {Lexeme} {GetLiteralString()}";
+    }
+    
+    private string GetLiteralString()
+    {
+        return Literal switch
+        {
+            null     => "null",
+            string s => s,
+            double d => d.ToString("F1"),
+            _        => throw new Exception("Unknown literal type")
+        };
     }
 }
