@@ -48,6 +48,22 @@ if (!string.IsNullOrEmpty(fileContents))
             
             break;
         }
+        case "evaluate":
+        {
+            Tokenizer tokenizer = new(fileContents);
+            tokenizer.Scan();
+            
+            if (tokenizer.GetReturnCode() != 0) Environment.Exit(tokenizer.GetReturnCode());
+            
+            Parser.Parser parser = new(tokenizer.GetTokens());
+            var expression = parser.Parse();
+            
+            if (parser.GetReturnCode() != 0) Environment.Exit(parser.GetReturnCode());
+            
+            Console.WriteLine(Interpreter.Interpret(expression!));
+            
+            break;
+        }
         default:
             Console.Error.WriteLine($"Unknown command: {command}");
             Environment.Exit(1);
