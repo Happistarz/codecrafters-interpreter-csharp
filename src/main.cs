@@ -37,11 +37,15 @@ if (!string.IsNullOrEmpty(fileContents))
             Tokenizer tokenizer = new(fileContents);
             tokenizer.Scan();
             
+            if (tokenizer.GetReturnCode() != 0) Environment.Exit(tokenizer.GetReturnCode());
+            
             Parser.Parser parser = new(tokenizer.GetTokens());
             var expression = parser.Parse();
-            Console.WriteLine(Printer.Print(expression));
             
-            Environment.Exit(0);
+            if (parser.GetReturnCode() != 0) Environment.Exit(parser.GetReturnCode());
+            
+            Console.WriteLine(Printer.Print(expression!));
+            
             break;
         }
         default:

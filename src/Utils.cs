@@ -5,9 +5,9 @@ namespace UTILS;
 
 public static class Utils
 {
-    public static void Error(int _line, string _message)
+    public static void Error(int _line, string _where, string _message)
     {
-        Console.Error.WriteLine($"[line {_line}] Error: {_message}");
+        Console.Error.WriteLine($"[line {_line}] Error{_where}: {_message}");
     }
     
     public static bool IsDigit(char _c)

@@ -173,7 +173,7 @@ public class Tokenizer(string _content)
                     break;
                 }
 
-                Utils.Error(_line, "Unexpected character: " + c);
+                Utils.Error(_line,"", "Unexpected character: " + c);
                 _returnCode = 65;
                 break;
         }
@@ -193,7 +193,7 @@ public class Tokenizer(string _content)
 
         if (IsAtEnd())
         {
-            Utils.Error(_line, "Unterminated string.");
+            Utils.Error(_line, "","Unterminated string.");
             _returnCode = 65;
             return;
         }
