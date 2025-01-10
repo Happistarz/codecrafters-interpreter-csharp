@@ -9,7 +9,7 @@ public static class Interpreter
         try
         {
             var value = _expression.Accept(new ExpressionInterpreter());
-            return Utils.GetLiteralString(value);
+            return Utils.GetLiteralString(value, _fixed: false);
         }
         catch (Exception exception)
         {
