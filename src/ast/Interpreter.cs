@@ -11,7 +11,7 @@ public static class Interpreter
             var value = _expression.Accept(new ExpressionInterpreter());
             return Utils.GetLiteralString(value);
         }
-        catch (System.Exception exception)
+        catch (Exception exception)
         {
             return exception.Message;
         }

@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using UTILS;
 
 namespace AST;
 
@@ -24,9 +25,7 @@ public class ExpressionPrinter : IVisitor<string>
 
     public string VisitLiteralExpression(Literal _expression)
     {
-        if (_expression.Value == null) return "nil";
-
-        return _expression.Value.ToString() ?? string.Empty;
+        return _expression.Value == null ? "nil" : Utils.GetLiteralString(_expression.Value);
     }
 
     public string VisitUnaryExpression(Unary _expression)
