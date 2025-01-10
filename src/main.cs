@@ -39,7 +39,7 @@ if (!string.IsNullOrEmpty(fileContents))
             
             Parser.Parser parser = new(tokenizer.GetTokens());
             var expression = parser.Parse();
-            Console.WriteLine(Interpreter.Interpret(expression));
+            Console.WriteLine(Printer.Print(expression));
             
             Environment.Exit(0);
             break;
