@@ -5,6 +5,11 @@ using AST;
 
 public class ParseError : Exception;
 
+public class RuntimeError(Token _token, string _message) : Exception(_message)
+{
+    public readonly Token Token = _token;
+}
+
 public class Parser(List<Token> _tokens)
 {
     private int _current;
