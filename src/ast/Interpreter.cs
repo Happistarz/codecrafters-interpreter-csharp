@@ -3,19 +3,39 @@ using UTILS;
 
 namespace AST;
 
+using Expression;
+using Statement;
+
 public static class Interpreter
 {
-    public static string Interpret(Expression _expression)
+    public static string Interpret(Expression.Expression _expression)
     {
         try
         {
-            var value = _expression.Accept(new ExpressionInterpreter());
+            var value = _expression.Accept(new InterpreterEvaluator());
             return Utils.GetLiteralString(value, _fixed: false);
         }
         catch (RuntimeError error)
         {
-            Console.Error.WriteLine("{0}\n[line {1}]", error.Message, error.Token.Line);
-            Environment.Exit(70);
+            Utils.RuntimeError(error.Token.Line, error.Message);
+            return string.Empty;
+        }
+        catch (Exception exception)
+        {
+            return exception.Message;
+        }
+    }
+    
+    public static string Interpret(Statement.Statement _statement)
+    {
+        try
+        {
+            _statement.Accept(new InterpreterEvaluator());
+            return string.Empty;
+        }
+        catch (RuntimeError error)
+        {
+            Utils.RuntimeError(error.Token.Line, error.Message);
             return string.Empty;
         }
         catch (Exception exception)
@@ -25,7 +45,7 @@ public static class Interpreter
     }
 }
 
-public class ExpressionInterpreter : IVisitor<object?>
+public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisitor<object?>
 {
     public object? VisitLiteralExpression(Literal _expression)
     {
@@ -127,5 +147,17 @@ public class ExpressionInterpreter : IVisitor<object?>
     {
         if (_left is double && _right is double) return;
         throw new RuntimeError(_operator, "Operands must be numbers.");
+    }
+
+    public object? VisitExpressionStatement(ExpressionStatement _statement)
+    {
+        return _statement.Expression.Accept(this);
+    }
+
+    public object? VisitPrintStatement(PrintStatement _statement)
+    {
+        var value = _statement.Expression.Accept(this);
+        Console.WriteLine(Utils.GetLiteralString(value, _fixed: false));
+        return null;
     }
 }

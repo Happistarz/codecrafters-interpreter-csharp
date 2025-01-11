@@ -30,16 +30,10 @@ public class Tokenizer(string _content)
     private          int         _start;
     private          int         _current;
     private          int         _line = 1;
-    private          int         _returnCode;
 
     private bool IsAtEnd()
     {
         return _current >= _content.Length;
-    }
-
-    public int GetReturnCode()
-    {
-        return _returnCode;
     }
 
     public List<Token> GetTokens()
@@ -174,7 +168,7 @@ public class Tokenizer(string _content)
                 }
 
                 Utils.Error(_line,"", "Unexpected character: " + c);
-                _returnCode = 65;
+                Program.HadError = true;
                 break;
         }
     }
@@ -194,7 +188,7 @@ public class Tokenizer(string _content)
         if (IsAtEnd())
         {
             Utils.Error(_line, "","Unterminated string.");
-            _returnCode = 65;
+            Program.HadError = true;
             return;
         }
 

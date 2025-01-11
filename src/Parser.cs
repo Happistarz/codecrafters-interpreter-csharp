@@ -1,7 +1,8 @@
 ﻿namespace Parser;
 
 using Token;
-using AST;
+using AST.Expression;
+using AST.Statement;
 
 public class ParseError : Exception;
 
@@ -14,13 +15,6 @@ public class Parser(List<Token> _tokens)
 {
     private int _current;
     
-    private int _returnCode;
-    
-    public int GetReturnCode()
-    {
-        return _returnCode;
-    }
-
     private bool IsAtEnd()
     {
         return Peek().Type == TokenType.EOF;
@@ -64,7 +58,25 @@ public class Parser(List<Token> _tokens)
         return Peek().Type == _type;
     }
 
-    public Expression? Parse()
+    public List<Statement> Parse()
+    {
+        List<Statement> statements = [];
+        while (!IsAtEnd())
+        {
+            try
+            {
+                statements.Add(Statement());
+            }
+            catch (ParseError)
+            {
+                Synchronize();
+            }
+        }
+        
+        return statements;
+    }
+    
+    public Expression? ParseExpression()
     {
         try
         {
@@ -74,6 +86,27 @@ public class Parser(List<Token> _tokens)
         {
             return null;
         }
+    }
+    
+    private Statement Statement()
+    {
+        if (Match(TokenType.PRINT)) return PrintStatement();
+        
+        return ExpressionStatement();
+    }
+    
+    private PrintStatement PrintStatement()
+    {
+        var value = Expression();
+        Consume(TokenType.SEMICOLON, "Expect ';' after value.");
+        return new PrintStatement(value);
+    }
+    
+    private ExpressionStatement ExpressionStatement()
+    {
+        var value = Expression();
+        Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+        return new ExpressionStatement(value);
     }
 
     private Expression Expression()
@@ -164,10 +197,34 @@ public class Parser(List<Token> _tokens)
         return new Grouping(expression);
     }
     
-    private ParseError Error(string _message, Token _token)
+    private static ParseError Error(string _message, Token _token)
     {
         UTILS.Utils.Error(_token.Line, _token.Type == TokenType.EOF ? " at end" : $" at '{_token.Lexeme}'", _message);
-        _returnCode = 65;
         return new ParseError();
+    }
+    
+    private void Synchronize()
+    {
+        Advance();
+        
+        while (!IsAtEnd())
+        {
+            if (Previous().Type == TokenType.SEMICOLON) return;
+            
+            switch (Peek().Type)
+            {
+                case TokenType.CLASS:
+                case TokenType.FUN:
+                case TokenType.VAR:
+                case TokenType.FOR:
+                case TokenType.IF:
+                case TokenType.WHILE:
+                case TokenType.PRINT:
+                case TokenType.RETURN:
+                    return;
+            }
+            
+            Advance();
+        }
     }
 }

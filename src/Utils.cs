@@ -8,6 +8,13 @@ public static class Utils
     public static void Error(int _line, string _where, string _message)
     {
         Console.Error.WriteLine($"[line {_line}] Error{_where}: {_message}");
+        Program.HadError = true;
+    }
+    
+    public static void RuntimeError(int _line, string _message)
+    {
+        Console.Error.WriteLine("{0}\n[line {1}]", _message, _line);
+        Program.HadRuntimeError = true;
     }
 
     public static bool IsDigit(char _c)
