@@ -116,7 +116,7 @@ internal class Program
             case "run":
                 
                 var statements = parser.Parse();
-                foreach (var statement in statements) Console.WriteLine(Interpreter.Interpret(statement));
+                foreach (var statement in statements) Interpreter.Interpret(statement);
                 break;
         }
     }
