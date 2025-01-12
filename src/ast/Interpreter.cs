@@ -26,11 +26,14 @@ public static class Interpreter
         }
     }
     
-    public static string Interpret(Statement.Statement _statement)
+    public static string Interpret(List<Statement.Statement> _statements)
     {
         try
         {
-            _statement.Accept(new InterpreterEvaluator());
+            foreach (var statement in _statements)
+            {
+                statement.Accept(new InterpreterEvaluator());
+            }
             return string.Empty;
         }
         catch (RuntimeError error)
