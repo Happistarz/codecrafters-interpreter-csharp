@@ -14,7 +14,7 @@ public class RuntimeError(Token _token, string _message) : Exception(_message)
 public class Parser(List<Token> _tokens)
 {
     private int _current;
-    
+
     private bool IsAtEnd()
     {
         return Peek().Type == TokenType.EOF;
@@ -39,7 +39,7 @@ public class Parser(List<Token> _tokens)
     private Token Consume(TokenType _type, string _message)
     {
         if (Check(_type)) return Advance();
-        
+
         throw Error(_message, Peek());
     }
 
@@ -72,10 +72,10 @@ public class Parser(List<Token> _tokens)
                 Synchronize();
             }
         }
-        
+
         return statements;
     }
-    
+
     public Expression? ParseExpression()
     {
         try
@@ -87,26 +87,39 @@ public class Parser(List<Token> _tokens)
             return null;
         }
     }
-    
+
     private Statement Statement()
     {
         if (Match(TokenType.PRINT)) return PrintStatement();
-        
+        if (Match(TokenType.VAR)) return VarStatement();
+
         return ExpressionStatement();
     }
-    
+
     private PrintStatement PrintStatement()
     {
         var value = Expression();
         Consume(TokenType.SEMICOLON, "Expect ';' after value.");
         return new PrintStatement(value);
     }
-    
+
     private ExpressionStatement ExpressionStatement()
     {
         var value = Expression();
         Consume(TokenType.SEMICOLON, "Expect ';' after expression.");
         return new ExpressionStatement(value);
+    }
+
+    private VarStatement VarStatement()
+    {
+        var name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+        Expression? initializer = null;
+
+        if (Match(TokenType.EQUAL)) initializer = Expression();
+        Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+
+        return new VarStatement(name, initializer);
     }
 
     private Expression Expression()
@@ -189,6 +202,11 @@ public class Parser(List<Token> _tokens)
         {
             return new Literal(Previous().Literal);
         }
+        
+        if (Match(TokenType.IDENTIFIER))
+        {
+            return new Variable(Previous());
+        }
 
         if (!Match(TokenType.LEFT_PAREN)) throw Error("Expect expression.", Peek());
 
@@ -196,21 +214,21 @@ public class Parser(List<Token> _tokens)
         Consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
         return new Grouping(expression);
     }
-    
+
     private static ParseError Error(string _message, Token _token)
     {
         UTILS.Utils.Error(_token.Line, _token.Type == TokenType.EOF ? " at end" : $" at '{_token.Lexeme}'", _message);
         return new ParseError();
     }
-    
+
     private void Synchronize()
     {
         Advance();
-        
+
         while (!IsAtEnd())
         {
             if (Previous().Type == TokenType.SEMICOLON) return;
-            
+
             switch (Peek().Type)
             {
                 case TokenType.CLASS:
@@ -223,7 +241,7 @@ public class Parser(List<Token> _tokens)
                 case TokenType.RETURN:
                     return;
             }
-            
+
             Advance();
         }
     }

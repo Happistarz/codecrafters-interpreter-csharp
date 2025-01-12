@@ -1,3 +1,2 @@
-﻿print "baz"+"quz"+"foo";
-49 + "baz";
-print "this should not be printed";
+﻿var name = "oui";
+print name;

@@ -1,4 +1,5 @@
-﻿using Parser;
+﻿using Env;
+using Parser;
 using UTILS;
 
 namespace AST;
@@ -119,6 +120,11 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
                 return null;
         }
     }
+    
+    public object? VisitVariableExpression(Variable _expression)
+    {
+        return Definitions.Instance.Get(_expression.Name);
+    }
 
     private static bool IsTruthy(object? _value)
     {
@@ -161,6 +167,13 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     {
         var value = _statement.Expression.Accept(this);
         Console.WriteLine(Utils.GetLiteralString(value, _fixed: false));
+        return null;
+    }
+    
+    public object? VisitVarStatement(VarStatement _statement)
+    {
+        var value = _statement.Initializer?.Accept(this);
+        Definitions.Instance.Assign(_statement.Name.Lexeme, value);
         return null;
     }
 }

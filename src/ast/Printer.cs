@@ -39,6 +39,11 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
     {
         return Parenthesize(_expression.Operator.Lexeme, _expression.Right);
     }
+    
+    public string VisitVariableExpression(Variable _expression)
+    {
+        return _expression.Name.Lexeme;
+    }
 
     private string Parenthesize(string _name, params Expression.Expression[] _expressions)
     {
@@ -65,5 +70,22 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
     public string VisitPrintStatement(PrintStatement _expression)
     {
         return _expression.Expression.Accept(this);
+    }
+    
+    public string VisitVarStatement(VarStatement _expression)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append("(var ").Append(_expression.Name.Lexeme);
+
+        if (_expression.Initializer != null)
+        {
+            builder.Append(" = ");
+            builder.Append(_expression.Initializer.Accept(this));
+        }
+
+        builder.Append(')');
+
+        return builder.ToString();
     }
 }
