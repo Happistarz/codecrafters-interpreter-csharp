@@ -209,4 +209,13 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         Definitions.INSTANCE.Assign(_statement.Name.Lexeme, value);
         return null;
     }
+    
+    public object? VisitBlockStatement(BlockStatement _statement)
+    {
+        foreach (var statement in _statement.Statements)
+        {
+            statement.Accept(this);
+        }
+        return null;
+    }
 }

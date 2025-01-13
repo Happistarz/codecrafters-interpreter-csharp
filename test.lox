@@ -1,8 +1,8 @@
-﻿var hello = 65;
-var baz;
-var quz;
-
-hello = baz = quz = hello * 2;
-print hello;
-print baz;
-print baz;
+﻿{
+    var hello = "Hello";
+    var world = "world";
+    {
+        var hello = "Hello";
+        var world = "world";
+        print hello + " " + world;
+}

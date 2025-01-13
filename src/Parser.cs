@@ -107,6 +107,7 @@ public class Parser(List<Token> _tokens)
     {
         if (Match(TokenType.PRINT)) return PrintStatement();
         if (Match(TokenType.VAR)) return VarStatement();
+        if (Match(TokenType.LEFT_BRACE)) return BlockStatement();
 
         return ExpressionStatement();
     }
@@ -135,6 +136,19 @@ public class Parser(List<Token> _tokens)
         Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
 
         return new VarStatement(name, initializer);
+    }
+
+    private BlockStatement BlockStatement()
+    {
+        List<Statement> statements = [];
+
+        while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
+        {
+            statements.Add(Statement());
+        }
+
+        Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+        return new BlockStatement(statements);
     }
 
     private Expression Expression()

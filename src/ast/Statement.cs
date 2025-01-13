@@ -15,6 +15,7 @@ public interface IStatementVisitor<out T>
     T VisitExpressionStatement(ExpressionStatement _expression);
     T VisitPrintStatement(PrintStatement           _expression);
     T VisitVarStatement(VarStatement               _expression);
+    T VisitBlockStatement(BlockStatement           _expression);
 }
 
 public class ExpressionStatement(Expression _expression) : Statement
@@ -45,5 +46,15 @@ public class VarStatement(Token.Token _name, Expression? _initializer) : Stateme
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {
         return _statementVisitor.VisitVarStatement(this);
+    }
+}
+
+public class BlockStatement(List<Statement> _statements) : Statement
+{
+    public List<Statement> Statements { get; } = _statements;
+
+    public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
+    {
+        return _statementVisitor.VisitBlockStatement(this);
     }
 }

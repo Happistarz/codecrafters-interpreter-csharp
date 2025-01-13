@@ -120,4 +120,20 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
 
         return builder.ToString();
     }
+    
+    public string VisitBlockStatement(BlockStatement _expression)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append("{block ");
+
+        foreach (var statement in _expression.Statements)
+        {
+            builder.Append(statement.Accept(this));
+        }
+
+        builder.Append('}');
+
+        return builder.ToString();
+    }
 }
