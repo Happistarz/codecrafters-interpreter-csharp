@@ -1,4 +1,5 @@
 ﻿using Parser;
+using Utils = UTILS.Utils;
 
 namespace Env;
 
@@ -8,7 +9,20 @@ public class Definitions(Definitions? _enclosing = null)
 
     private readonly Dictionary<string, object?> _values = new();
 
-    public void Assign(string _name, object? _value)
+    public void Assign(Token.Token _name, object? _value)
+    {
+        if (_values.ContainsKey(_name.Lexeme))
+        {
+            _values[_name.Lexeme] = _value;
+            return;
+        }
+
+        if (_enclosing == null) Utils.RuntimeError(_name.Line, $"Undefined variable '{_name.Lexeme}'.");
+
+        _enclosing?.Assign(_name, _value);
+    }
+    
+    public void Define(string _name, object? _value)
     {
         _values[_name] = _value;
     }

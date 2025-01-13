@@ -1,32 +1,17 @@
-﻿var a = "global a";
-var b = "global b";
-var c = "global c";
+﻿// This program tests that when a variable is declared in an outer scope,
+// it can be used in an inner scope
+// But when a variable is declared in an inner scope,
+// it can't be used in an outer scope
 {
-  var a = "outer a";
-  var b = "outer b";
+  var foo = "outer foo";
+  var world = "outer world";
   {
-    var a = "inner a";
-    print a;
-    print b;
-    print c;
+    foo = "modified foo";
+    var world = "inner world";
+    print foo;
+    print world;
   }
-  print a;
-  print b;
-  print c;
+  print foo;
+  print world;
 }
-print a;
-print b;
-print c;
-
-// output:
-// inner a
-// outer b
-// global c
-
-// outer a
-// outer b
-// global c
-
-// global a
-// global b
-// global c
+print world;

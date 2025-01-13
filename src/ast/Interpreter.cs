@@ -168,7 +168,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     public object? VisitAssignExpression(Assign _expression)
     {
         var value = _expression.Value.Accept(this);
-        _definitions.Assign(_expression.Name.Lexeme, value);
+        _definitions.Assign(_expression.Name, value);
         return value;
     }
 
@@ -219,7 +219,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     public object? VisitVarStatement(VarStatement _statement)
     {
         var value = _statement.Initializer?.Accept(this);
-        _definitions.Assign(_statement.Name.Lexeme, value);
+        _definitions.Define(_statement.Name.Lexeme, value);
         return null;
     }
     
