@@ -14,7 +14,10 @@ public interface IExpressionVisitor<out T>
     T VisitGroupingExpression(Grouping _expression);
     T VisitLiteralExpression(Literal _expression);
     T VisitUnaryExpression(Unary _expression);
+    T VisitSetExpression(Set _expression);
+    T VisitGetExpression(Get _expression);
     T VisitVariableExpression(Variable _expression);
+    T VisitAssignExpression(Assign _expression);
 }
 
 public class Binary(Expression _left, Token.Token _operator, Expression _right) : Expression
@@ -60,6 +63,29 @@ public class Unary(Token.Token _operator, Expression _right) : Expression
     }
 }
 
+public class Set(Expression _object, Token.Token _name, Expression _value) : Expression
+{
+    public Expression Object { get; } = _object;
+    public Token.Token Name    { get; } = _name;
+    public Expression Value   { get; } = _value;
+
+    public override T Accept<T>(IExpressionVisitor<T> _expressionVisitor)
+    {
+        return _expressionVisitor.VisitSetExpression(this);
+    }
+}
+
+public class Get(Expression _object, Token.Token _name) : Expression
+{
+    public Expression Object { get; } = _object;
+    public Token.Token Name    { get; } = _name;
+
+    public override T Accept<T>(IExpressionVisitor<T> _expressionVisitor)
+    {
+        return _expressionVisitor.VisitGetExpression(this);
+    }
+}
+
 public class Variable(Token.Token _name) : Expression
 {
     public Token.Token Name { get; } = _name;
@@ -67,5 +93,16 @@ public class Variable(Token.Token _name) : Expression
     public override T Accept<T>(IExpressionVisitor<T> _expressionVisitor)
     {
         return _expressionVisitor.VisitVariableExpression(this);
+    }
+}
+
+public class Assign(Token.Token _name, Expression _value) : Expression
+{
+    public Token.Token Name  { get; } = _name;
+    public Expression  Value { get; } = _value;
+
+    public override T Accept<T>(IExpressionVisitor<T> _expressionVisitor)
+    {
+        return _expressionVisitor.VisitAssignExpression(this);
     }
 }

@@ -4,6 +4,21 @@ using Token;
 using AST.Expression;
 using AST.Statement;
 
+// program        → statement* EOF ;
+// statement      → exprStmt | printStmt | varStmt ;
+// exprStmt       → expression ";" ;
+// printStmt      → "print" expression ";" ;
+// varStmt        → "var" IDENTIFIER ( "=" expression )? ";" ;
+
+// expression     → assignment ;
+// assignment     → IDENTIFIER "=" assignment | equality ;
+// equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+// comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+// term           → factor ( ( "-" | "+" ) factor )* ;
+// factor         → unary ( ( "/" | "*" ) unary )* ;
+// unary          → ( "!" | "-" ) unary | primary ;
+// primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+
 public class ParseError : Exception;
 
 public class RuntimeError(Token _token, string _message) : Exception(_message)
@@ -124,7 +139,26 @@ public class Parser(List<Token> _tokens)
 
     private Expression Expression()
     {
-        return Equality();
+        return Assignment();
+    }
+
+    private Expression Assignment()
+    {
+        var expression = Equality();
+
+        if (!Match(TokenType.EQUAL)) return expression;
+        
+        var equals = Previous();
+        var value  = Assignment();
+
+        if (expression is Variable variable)
+        {
+            return new Assign(variable.Name, value);
+        }
+
+        Error("Invalid assignment target.", equals);
+
+        return expression;
     }
 
     private Expression Equality()

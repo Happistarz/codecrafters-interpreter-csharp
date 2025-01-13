@@ -4,11 +4,11 @@ namespace Env;
 
 public class Definitions
 {
-    public static Definitions Instance;
+    public static readonly Definitions INSTANCE;
     
     static Definitions()
     {
-        Instance = new Definitions();
+        INSTANCE = new Definitions();
     }
     
     private readonly Dictionary<string, object?> _values = new();

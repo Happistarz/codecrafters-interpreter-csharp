@@ -12,9 +12,16 @@ public static class Printer
         return _expression.Accept(new AstPrinter());
     }
     
-    public static string Print(Statement.Statement _statement)
+    public static string Print(List<Statement.Statement> _statements)
     {
-        return _statement.Accept(new AstPrinter());
+        var builder = new StringBuilder();
+
+        foreach (var statement in _statements)
+        {
+            builder.Append(statement.Accept(new AstPrinter()));
+        }
+
+        return builder.ToString();
     }
 }
 
@@ -40,9 +47,29 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
         return Parenthesize(_expression.Operator.Lexeme, _expression.Right);
     }
     
+    public string VisitSetExpression(Set _expression)
+    {
+        return Parenthesize("set", _expression.Object, _expression.Value);
+    }
+    
+    public string VisitGetExpression(Get _expression)
+    {
+        return Parenthesize("get", _expression.Object);
+    }
+    
     public string VisitVariableExpression(Variable _expression)
     {
         return _expression.Name.Lexeme;
+    }
+    
+    public string VisitAssignExpression(Assign _expression)
+    {
+        var builder = new StringBuilder();
+        
+        builder.Append(_expression.Name.Lexeme).Append(" = ");
+        builder.Append(_expression.Value.Accept(this));
+        
+        return Parenthesize(builder.ToString());
     }
 
     private string Parenthesize(string _name, params Expression.Expression[] _expressions)
@@ -69,7 +96,12 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
     
     public string VisitPrintStatement(PrintStatement _expression)
     {
-        return _expression.Expression.Accept(this);
+        var builder = new StringBuilder();
+        
+        builder.Append("print ");
+        builder.Append(_expression.Expression.Accept(this));
+        
+        return Parenthesize(builder.ToString());
     }
     
     public string VisitVarStatement(VarStatement _expression)

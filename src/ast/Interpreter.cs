@@ -121,9 +121,42 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         }
     }
     
+    public object? VisitSetExpression(Set _expression)
+    {
+        var obj = _expression.Object.Accept(this);
+        // if (!(obj is EnvInstance instance))
+        // {
+        //     throw new RuntimeError(_expression.Name, "Only instances have fields.");
+        // }
+
+        var value = _expression.Value.Accept(this);
+        // instance.Set(_expression.Name.Lexeme, value);
+        return value;
+    }
+    
+    public object? VisitGetExpression(Get _expression)
+    {
+        var obj = _expression.Object.Accept(this);
+
+        return obj;
+        // if (obj is EnvInstance instance)
+        // {
+        //     return instance.Get(_expression.Name.Lexeme);
+        // }
+        //
+        // throw new RuntimeError(_expression.Name, "Only instances have properties.");
+    }
+    
     public object? VisitVariableExpression(Variable _expression)
     {
-        return Definitions.Instance.Get(_expression.Name);
+        return Definitions.INSTANCE.Get(_expression.Name);
+    }
+    
+    public object? VisitAssignExpression(Assign _expression)
+    {
+        var value = _expression.Value.Accept(this);
+        Definitions.INSTANCE.Assign(_expression.Name.Lexeme, value);
+        return value;
     }
 
     private static bool IsTruthy(object? _value)
@@ -173,7 +206,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     public object? VisitVarStatement(VarStatement _statement)
     {
         var value = _statement.Initializer?.Accept(this);
-        Definitions.Instance.Assign(_statement.Name.Lexeme, value);
+        Definitions.INSTANCE.Assign(_statement.Name.Lexeme, value);
         return null;
     }
 }
