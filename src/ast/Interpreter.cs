@@ -29,11 +29,12 @@ public static class Interpreter
     
     public static string Interpret(List<Statement.Statement> _statements)
     {
+        InterpreterEvaluator evaluator = new();
         try
         {
             foreach (var statement in _statements)
             {
-                statement.Accept(new InterpreterEvaluator());
+                statement.Accept(evaluator);
             }
             return string.Empty;
         }
@@ -51,6 +52,8 @@ public static class Interpreter
 
 public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisitor<object?>
 {
+    private Definitions _definitions = new();
+    
     public object? VisitLiteralExpression(Literal _expression)
     {
         return _expression.Value;
@@ -81,6 +84,16 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     {
         var left  = _expression.Left.Accept(this);
         var right = _expression.Right.Accept(this);
+        
+        if (_expression.Left is Variable variable)
+        {
+            left = _definitions.Get(variable.Name);
+        }
+        
+        if (_expression.Right is Variable variable1)
+        {
+            right = _definitions.Get(variable1.Name);
+        }
 
         switch (_expression.Operator.Type)
         {
@@ -149,13 +162,13 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     
     public object? VisitVariableExpression(Variable _expression)
     {
-        return Definitions.INSTANCE.Get(_expression.Name);
+        return _definitions.Get(_expression.Name);
     }
     
     public object? VisitAssignExpression(Assign _expression)
     {
         var value = _expression.Value.Accept(this);
-        Definitions.INSTANCE.Assign(_expression.Name.Lexeme, value);
+        _definitions.Assign(_expression.Name.Lexeme, value);
         return value;
     }
 
@@ -206,16 +219,30 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     public object? VisitVarStatement(VarStatement _statement)
     {
         var value = _statement.Initializer?.Accept(this);
-        Definitions.INSTANCE.Assign(_statement.Name.Lexeme, value);
+        _definitions.Assign(_statement.Name.Lexeme, value);
         return null;
     }
     
     public object? VisitBlockStatement(BlockStatement _statement)
     {
-        foreach (var statement in _statement.Statements)
-        {
-            statement.Accept(this);
-        }
+        ExecuteBlock(_statement.Statements, new Definitions(_definitions));
         return null;
+    }
+    
+    private void ExecuteBlock(List<Statement.Statement> _statements, Definitions _def)
+    {
+        var previous = _definitions;
+        try
+        {
+            _definitions = _def;
+            foreach (var statement in _statements)
+            {
+                statement.Accept(this);
+            }
+        }
+        finally
+        {
+            _definitions = previous;
+        }
     }
 }

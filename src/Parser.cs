@@ -5,10 +5,12 @@ using AST.Expression;
 using AST.Statement;
 
 // program        → statement* EOF ;
-// statement      → exprStmt | printStmt | varStmt ;
+// statement      → exprStmt | printStmt | varStmt | block ;
 // exprStmt       → expression ";" ;
 // printStmt      → "print" expression ";" ;
 // varStmt        → "var" IDENTIFIER ( "=" expression )? ";" ;
+// block          → "{" declaration* "}" ;
+// declaration    → statement ;
 
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment | equality ;
@@ -17,7 +19,7 @@ using AST.Statement;
 // term           → factor ( ( "-" | "+" ) factor )* ;
 // factor         → unary ( ( "/" | "*" ) unary )* ;
 // unary          → ( "!" | "-" ) unary | primary ;
-// primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+// primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 
 public class ParseError : Exception;
 
@@ -161,7 +163,7 @@ public class Parser(List<Token> _tokens)
         var expression = Equality();
 
         if (!Match(TokenType.EQUAL)) return expression;
-        
+
         var equals = Previous();
         var value  = Assignment();
 
@@ -250,7 +252,7 @@ public class Parser(List<Token> _tokens)
         {
             return new Literal(Previous().Literal);
         }
-        
+
         if (Match(TokenType.IDENTIFIER))
         {
             return new Variable(Previous());
