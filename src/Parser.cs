@@ -12,6 +12,7 @@ using AST.Statement;
 // block          → "{" declaration* "}" ;
 // ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 // whileStmt      → "while" "(" expression ")" statement ;
+// forStmt        → "for" "(" ( varStmt | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 // declaration    → statement ;
 
 
@@ -117,6 +118,7 @@ public class Parser(List<Token> _tokens)
         if (Match(TokenType.LEFT_BRACE)) return BlockStatement();
         if (Match(TokenType.IF)) return IfStatement();
         if (Match(TokenType.WHILE)) return WhileStatement();
+        if (Match(TokenType.FOR)) return ForStatement();
 
         return ExpressionStatement();
     }
@@ -183,6 +185,58 @@ public class Parser(List<Token> _tokens)
         var body = Statement();
         
         return new WhileStatement(condition, body);
+    }
+
+    private Statement ForStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+        
+        Statement? initializer;
+        if (Match(TokenType.SEMICOLON))
+        {
+            initializer = null;
+        }
+        else if (Match(TokenType.VAR))
+        {
+            initializer = VarStatement();
+        }
+        else
+        {
+            initializer = ExpressionStatement();
+        }
+        
+        Expression? condition = null;
+        if (!Check(TokenType.SEMICOLON))
+        {
+            condition = Expression();
+        }
+        
+        Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+        
+        Expression? increment = null;
+        if (!Check(TokenType.RIGHT_PAREN))
+        {
+            increment = Expression();
+        }
+        
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+        
+        var body = Statement();
+        
+        if (increment != null)
+        {
+            body = new BlockStatement([body, new ExpressionStatement(increment)]);
+        }
+        
+        condition ??= new Literal(true);
+        body = new WhileStatement(condition, body);
+        
+        if (initializer != null)
+        {
+            body = new BlockStatement([initializer, body]);
+        }
+
+        return body;
     }
 
     private Expression Expression()
