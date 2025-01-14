@@ -136,4 +136,24 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
 
         return builder.ToString();
     }
+    
+    public string VisitIfStatement(IfStatement _expression)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append("(if ");
+        builder.Append(_expression.Condition.Accept(this));
+        builder.Append(' ');
+        builder.Append(_expression.ThenBranch.Accept(this));
+
+        if (_expression.ElseBranch != null)
+        {
+            builder.Append(' ');
+            builder.Append(_expression.ElseBranch.Accept(this));
+        }
+
+        builder.Append(')');
+
+        return builder.ToString();
+    }
 }

@@ -1,17 +1,9 @@
-﻿// This program tests that when a variable is declared in an outer scope,
-// it can be used in an inner scope
-// But when a variable is declared in an inner scope,
-// it can't be used in an outer scope
-{
-  var foo = "outer foo";
-  var world = "outer world";
-  {
-    foo = "modified foo";
-    var world = "inner world";
-    print foo;
-    print world;
-  }
-  print foo;
-  print world;
-}
-print world;
+﻿var stage = "unknown";
+var age = 50;
+if (age < 18) { stage = "child"; }
+if (age >= 18) { stage = "adult"; }
+print stage;
+
+var isAdult = age >= 18;
+if (isAdult) { print "eligible for voting: true"; }
+if (!isAdult) { print "eligible for voting: false"; }

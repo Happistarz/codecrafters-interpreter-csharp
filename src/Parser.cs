@@ -5,12 +5,14 @@ using AST.Expression;
 using AST.Statement;
 
 // program        → statement* EOF ;
-// statement      → exprStmt | printStmt | varStmt | block ;
+// statement      → exprStmt | printStmt | varStmt | block | ifStmt ;
 // exprStmt       → expression ";" ;
 // printStmt      → "print" expression ";" ;
 // varStmt        → "var" IDENTIFIER ( "=" expression )? ";" ;
 // block          → "{" declaration* "}" ;
 // declaration    → statement ;
+
+// ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment | equality ;
@@ -110,6 +112,7 @@ public class Parser(List<Token> _tokens)
         if (Match(TokenType.PRINT)) return PrintStatement();
         if (Match(TokenType.VAR)) return VarStatement();
         if (Match(TokenType.LEFT_BRACE)) return BlockStatement();
+        if (Match(TokenType.IF)) return IfStatement();
 
         return ExpressionStatement();
     }
@@ -151,6 +154,20 @@ public class Parser(List<Token> _tokens)
 
         Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
         return new BlockStatement(statements);
+    }
+    
+    private IfStatement IfStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+        var condition = Expression();
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+        var thenBranch = Statement();
+        Statement? elseBranch = null;
+
+        if (Match(TokenType.ELSE)) elseBranch = Statement();
+
+        return new IfStatement(condition, thenBranch, elseBranch);
     }
 
     private Expression Expression()

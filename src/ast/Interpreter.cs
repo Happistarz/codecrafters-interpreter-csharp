@@ -245,4 +245,18 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
             _definitions = previous;
         }
     }
+    
+    public object? VisitIfStatement(IfStatement _statement)
+    {
+        if (IsTruthy(_statement.Condition.Accept(this)))
+        {
+            _statement.ThenBranch.Accept(this);
+        }
+        else
+        {
+            _statement.ElseBranch?.Accept(this);
+        }
+
+        return null;
+    }
 }
