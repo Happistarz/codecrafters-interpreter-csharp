@@ -147,7 +147,7 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
 
         foreach (var statement in _expression.Statements)
         {
-            builder.Append(statement.Accept(this));
+            builder.Append(statement?.Accept(this));
         }
 
         builder.Append('}');

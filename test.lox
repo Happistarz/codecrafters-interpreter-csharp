@@ -1,2 +1,21 @@
-﻿var a = 0;
-for ({}; a < 2; a = a + 1) {}
+﻿var world = "after";
+{
+  var world = "before";
+
+  for (var world = 0; world < 1; world = world + 1) {
+    print world;
+    var world = -1;
+    print world;
+  }
+}
+
+{
+  for (var world = 0; world > 0; world = world + 1) {}
+
+  var world = "after";
+  print world;
+
+  for (world = 0; world < 1; world = world + 1) {
+    print world;
+  }
+}

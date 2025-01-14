@@ -80,19 +80,13 @@ public class Parser(List<Token> _tokens)
         return Peek().Type == _type;
     }
 
-    public List<Statement> Parse()
+    public List<Statement?> Parse()
     {
-        List<Statement> statements = [];
+        List<Statement?> statements = [];
         while (!IsAtEnd())
         {
-            try
-            {
-                statements.Add(Declaration());
-            }
-            catch (ParseError)
-            {
-                Synchronize();
-            }
+            var declaration = Declaration();
+            if (declaration != null) statements.Add(declaration);
         }
 
         return statements;
@@ -110,10 +104,18 @@ public class Parser(List<Token> _tokens)
         }
     }
 
-    private Statement Declaration()
+    private Statement? Declaration()
     {
-        if (Match(TokenType.VAR)) return VarStatement();
-        return Statement();
+        try
+        {
+            if (Match(TokenType.VAR)) return VarStatement();
+            return Statement();
+        }
+        catch (ParseError)
+        {
+            Synchronize();
+            return null;
+        }
     }
 
     private Statement Statement()
@@ -155,11 +157,11 @@ public class Parser(List<Token> _tokens)
 
     private BlockStatement BlockStatement()
     {
-        List<Statement> statements = [];
+        List<Statement?> statements = [];
 
         while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
         {
-            statements.Add(Statement());
+            statements.Add(Declaration());
         }
 
         Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");

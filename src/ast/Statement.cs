@@ -51,9 +51,9 @@ public class VarStatement(Token.Token _name, Expression? _initializer) : Stateme
     }
 }
 
-public class BlockStatement(List<Statement> _statements) : Statement
+public class BlockStatement(List<Statement?> _statements) : Statement
 {
-    public List<Statement> Statements { get; } = _statements;
+    public List<Statement?> Statements { get; } = _statements;
 
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {

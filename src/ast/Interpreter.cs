@@ -27,14 +27,14 @@ public static class Interpreter
         }
     }
     
-    public static string Interpret(List<Statement.Statement> _statements)
+    public static string Interpret(List<Statement.Statement?> _statements)
     {
         InterpreterEvaluator evaluator = new();
         try
         {
             foreach (var statement in _statements)
             {
-                statement.Accept(evaluator);
+                statement?.Accept(evaluator);
             }
             return string.Empty;
         }
@@ -245,7 +245,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         return null;
     }
     
-    private void ExecuteBlock(List<Statement.Statement> _statements, Definitions _def)
+    private void ExecuteBlock(List<Statement.Statement?> _statements, Definitions _def)
     {
         var previous = _definitions;
         try
@@ -253,7 +253,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
             _definitions = _def;
             foreach (var statement in _statements)
             {
-                statement.Accept(this);
+                statement?.Accept(this);
             }
         }
         finally
