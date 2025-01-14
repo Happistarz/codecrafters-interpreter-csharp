@@ -15,7 +15,6 @@ using AST.Statement;
 // forStmt        → "for" "(" ( varStmt | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 // declaration    → statement ;
 
-
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment | equality ;
 // logicalOr      → logicalAnd ( "or" logicalAnd )* ;
@@ -88,7 +87,7 @@ public class Parser(List<Token> _tokens)
         {
             try
             {
-                statements.Add(Statement());
+                statements.Add(Declaration());
             }
             catch (ParseError)
             {
@@ -111,14 +110,19 @@ public class Parser(List<Token> _tokens)
         }
     }
 
+    private Statement Declaration()
+    {
+        if (Match(TokenType.VAR)) return VarStatement();
+        return Statement();
+    }
+
     private Statement Statement()
     {
-        if (Match(TokenType.PRINT)) return PrintStatement();
-        if (Match(TokenType.VAR)) return VarStatement();
-        if (Match(TokenType.LEFT_BRACE)) return BlockStatement();
-        if (Match(TokenType.IF)) return IfStatement();
-        if (Match(TokenType.WHILE)) return WhileStatement();
         if (Match(TokenType.FOR)) return ForStatement();
+        if (Match(TokenType.IF)) return IfStatement();
+        if (Match(TokenType.PRINT)) return PrintStatement();
+        if (Match(TokenType.WHILE)) return WhileStatement();
+        if (Match(TokenType.LEFT_BRACE)) return BlockStatement();
 
         return ExpressionStatement();
     }
@@ -161,14 +165,14 @@ public class Parser(List<Token> _tokens)
         Consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
         return new BlockStatement(statements);
     }
-    
+
     private IfStatement IfStatement()
     {
         Consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
         var condition = Expression();
         Consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
 
-        var thenBranch = Statement();
+        var        thenBranch = Statement();
         Statement? elseBranch = null;
 
         if (Match(TokenType.ELSE)) elseBranch = Statement();
@@ -181,16 +185,16 @@ public class Parser(List<Token> _tokens)
         Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
         var condition = Expression();
         Consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
-        
+
         var body = Statement();
-        
+
         return new WhileStatement(condition, body);
     }
 
     private Statement ForStatement()
     {
         Consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
-        
+
         Statement? initializer;
         if (Match(TokenType.SEMICOLON))
         {
@@ -204,33 +208,33 @@ public class Parser(List<Token> _tokens)
         {
             initializer = ExpressionStatement();
         }
-        
+
         Expression? condition = null;
         if (!Check(TokenType.SEMICOLON))
         {
             condition = Expression();
         }
-        
+
         Consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
-        
+
         Expression? increment = null;
         if (!Check(TokenType.RIGHT_PAREN))
         {
             increment = Expression();
         }
-        
+
         Consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
-        
+
         var body = Statement();
-        
+
         if (increment != null)
         {
             body = new BlockStatement([body, new ExpressionStatement(increment)]);
         }
-        
+
         condition ??= new Literal(true);
-        body = new WhileStatement(condition, body);
-        
+        body      =   new WhileStatement(condition, body);
+
         if (initializer != null)
         {
             body = new BlockStatement([initializer, body]);
@@ -262,7 +266,7 @@ public class Parser(List<Token> _tokens)
 
         return expression;
     }
-    
+
     private Expression LogicalOr()
     {
         var expression = LogicalAnd();
@@ -276,7 +280,7 @@ public class Parser(List<Token> _tokens)
 
         return expression;
     }
-    
+
     private Expression LogicalAnd()
     {
         var expression = Equality();

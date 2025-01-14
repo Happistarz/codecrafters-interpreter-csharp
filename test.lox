@@ -1,1 +1,2 @@
-﻿for (var baz = 0; baz < 3;) print baz = baz + 1;
+﻿var a = 0;
+for ({}; a < 2; a = a + 1) {}
