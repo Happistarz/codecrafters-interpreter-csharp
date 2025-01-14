@@ -10,9 +10,10 @@ using AST.Statement;
 // printStmt      → "print" expression ";" ;
 // varStmt        → "var" IDENTIFIER ( "=" expression )? ";" ;
 // block          → "{" declaration* "}" ;
+// ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
+// whileStmt      → "while" "(" expression ")" statement ;
 // declaration    → statement ;
 
-// ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment | equality ;
@@ -115,6 +116,7 @@ public class Parser(List<Token> _tokens)
         if (Match(TokenType.VAR)) return VarStatement();
         if (Match(TokenType.LEFT_BRACE)) return BlockStatement();
         if (Match(TokenType.IF)) return IfStatement();
+        if (Match(TokenType.WHILE)) return WhileStatement();
 
         return ExpressionStatement();
     }
@@ -170,6 +172,17 @@ public class Parser(List<Token> _tokens)
         if (Match(TokenType.ELSE)) elseBranch = Statement();
 
         return new IfStatement(condition, thenBranch, elseBranch);
+    }
+
+    private WhileStatement WhileStatement()
+    {
+        Consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+        var condition = Expression();
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
+        
+        var body = Statement();
+        
+        return new WhileStatement(condition, body);
     }
 
     private Expression Expression()

@@ -17,6 +17,7 @@ public interface IStatementVisitor<out T>
     T VisitVarStatement(VarStatement               _expression);
     T VisitBlockStatement(BlockStatement           _expression);
     T VisitIfStatement(IfStatement                 _expression);
+    T VisitWhileStatement(WhileStatement           _expression);
 }
 
 public class ExpressionStatement(Expression _expression) : Statement
@@ -69,5 +70,16 @@ public class IfStatement(Expression _condition, Statement _thenBranch, Statement
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {
         return _statementVisitor.VisitIfStatement(this);
+    }
+}
+
+public class WhileStatement(Expression _condition, Statement _body) : Statement
+{
+    public Expression Condition { get; } = _condition;
+    public Statement  Body      { get; } = _body;
+
+    public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
+    {
+        return _statementVisitor.VisitWhileStatement(this);
     }
 }

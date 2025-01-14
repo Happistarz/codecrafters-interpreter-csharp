@@ -275,4 +275,14 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
 
         return null;
     }
+
+    public object? VisitWhileStatement(WhileStatement _statement)
+    {
+        while (IsTruthy(_statement.Condition.Accept(this)))
+        {
+            _statement.Body.Accept(this);
+        }
+
+        return null;
+    }
 }

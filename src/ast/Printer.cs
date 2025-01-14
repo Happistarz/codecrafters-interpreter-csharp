@@ -76,6 +76,19 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
     {
         return Parenthesize(_expression.Operator.Lexeme, _expression.Left, _expression.Right);
     }
+    
+    public string VisitWhileStatement(WhileStatement _expression)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append("(while ");
+        builder.Append(_expression.Condition.Accept(this));
+        builder.Append(' ');
+        builder.Append(_expression.Body.Accept(this));
+        builder.Append(')');
+
+        return builder.ToString();
+    }
 
     private string Parenthesize(string _name, params Expression.Expression[] _expressions)
     {
