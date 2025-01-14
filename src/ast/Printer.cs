@@ -71,6 +71,11 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
         
         return Parenthesize(builder.ToString());
     }
+    
+    public string VisitLogicalExpression(Logical _expression)
+    {
+        return Parenthesize(_expression.Operator.Lexeme, _expression.Left, _expression.Right);
+    }
 
     private string Parenthesize(string _name, params Expression.Expression[] _expressions)
     {

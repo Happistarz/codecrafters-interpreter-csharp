@@ -1,9 +1,8 @@
-﻿var stage = "unknown";
-var age = 50;
-if (age < 18) { stage = "child"; }
-if (age >= 18) { stage = "adult"; }
-print stage;
+﻿if (false or "ok") print "baz";
+if (nil or "ok") print "baz";
 
-var isAdult = age >= 18;
-if (isAdult) { print "eligible for voting: true"; }
-if (!isAdult) { print "eligible for voting: false"; }
+if (false or false) print "world";
+if (true or "world") print "world";
+
+if (24 or "bar") print "bar";
+if ("bar" or "bar") print "bar";

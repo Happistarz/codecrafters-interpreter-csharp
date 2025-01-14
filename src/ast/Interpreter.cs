@@ -171,6 +171,22 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         _definitions.Assign(_expression.Name, value);
         return value;
     }
+    
+    public object? VisitLogicalExpression(Logical _expression)
+    {
+        var left = _expression.Left.Accept(this);
+
+        if (_expression.Operator.Type == Token.TokenType.OR)
+        {
+            if (IsTruthy(left)) return left;
+        }
+        else
+        {
+            if (!IsTruthy(left)) return left;
+        }
+
+        return _expression.Right.Accept(this);
+    }
 
     private static bool IsTruthy(object? _value)
     {

@@ -16,6 +16,8 @@ using AST.Statement;
 
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment | equality ;
+// logicalOr      → logicalAnd ( "or" logicalAnd )* ;
+// logicalAnd     → equality ( "and" equality )* ;
 // equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 // term           → factor ( ( "-" | "+" ) factor )* ;
@@ -177,7 +179,7 @@ public class Parser(List<Token> _tokens)
 
     private Expression Assignment()
     {
-        var expression = Equality();
+        var expression = LogicalOr();
 
         if (!Match(TokenType.EQUAL)) return expression;
 
@@ -190,6 +192,34 @@ public class Parser(List<Token> _tokens)
         }
 
         Error("Invalid assignment target.", equals);
+
+        return expression;
+    }
+    
+    private Expression LogicalOr()
+    {
+        var expression = LogicalAnd();
+
+        while (Match(TokenType.OR))
+        {
+            var @operator = Previous();
+            var right     = LogicalAnd();
+            expression = new Logical(expression, @operator, right);
+        }
+
+        return expression;
+    }
+    
+    private Expression LogicalAnd()
+    {
+        var expression = Equality();
+
+        while (Match(TokenType.AND))
+        {
+            var @operator = Previous();
+            var right     = Equality();
+            expression = new Logical(expression, @operator, right);
+        }
 
         return expression;
     }
