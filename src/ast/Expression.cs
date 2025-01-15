@@ -19,6 +19,7 @@ public interface IExpressionVisitor<out T>
     T VisitVariableExpression(Variable _expression);
     T VisitAssignExpression(Assign _expression);
     T VisitLogicalExpression(Logical _expression);
+    T VisitCallExpression(Call _expression);
 }
 
 public class Binary(Expression _left, Token.Token _operator, Expression _right) : Expression
@@ -117,5 +118,17 @@ public class Logical(Expression _left, Token.Token _operator, Expression _right)
     public override T Accept<T>(IExpressionVisitor<T> _expressionVisitor)
     {
         return _expressionVisitor.VisitLogicalExpression(this);
+    }
+}
+
+public class Call(Expression _callee, Token.Token _paren, List<Expression> _arguments) : Expression
+{
+    public Expression       Callee    { get; } = _callee;
+    public Token.Token      Paren     { get; } = _paren;
+    public List<Expression> Arguments { get; } = _arguments;
+    
+    public override T Accept<T>(IExpressionVisitor<T> _expressionVisitor)
+    {
+        return _expressionVisitor.VisitCallExpression(this);
     }
 }

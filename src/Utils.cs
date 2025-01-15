@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using AST;
 
 namespace UTILS;
 
@@ -40,7 +41,7 @@ public static class Utils
             double d when _fixed => d % 1 == 0 ? d.ToString("F1") : d.ToString(CultureInfo.InvariantCulture),
             double d             => d.ToString(CultureInfo.InvariantCulture),
             bool b               => b.ToString().ToLower(),
-            _                    => throw new Exception("Unexpected value type.")
+            _                    => _value.ToString() ?? string.Empty
         };
     }
 }

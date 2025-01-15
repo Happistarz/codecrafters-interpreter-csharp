@@ -1,21 +1,9 @@
-﻿var world = "after";
-{
-  var world = "before";
+﻿var startTime = clock();
+var timeoutSeconds = 2;
 
-  for (var world = 0; world < 1; world = world + 1) {
-    print world;
-    var world = -1;
-    print world;
-  }
-}
-
-{
-  for (var world = 0; world > 0; world = world + 1) {}
-
-  var world = "after";
-  print world;
-
-  for (world = 0; world < 1; world = world + 1) {
-    print world;
-  }
+// Check if less than 2 seconds have elapsed
+if ((clock() >= startTime) and (clock() <= (startTime + timeoutSeconds))) {
+  print "Operation in progress...";
+} else {
+  print "Operation timed out!";
 }

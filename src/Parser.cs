@@ -24,6 +24,7 @@ using AST.Statement;
 // term           → factor ( ( "-" | "+" ) factor )* ;
 // factor         → unary ( ( "/" | "*" ) unary )* ;
 // unary          → ( "!" | "-" ) unary | primary ;
+// call           → primary ( "(" arguments? ")" )* ;
 // primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 
 public class ParseError : Exception;
@@ -355,11 +356,52 @@ public class Parser(List<Token> _tokens)
 
     private Expression Unary()
     {
-        if (!Match(TokenType.BANG, TokenType.MINUS)) return Primary();
+        if (!Match(TokenType.BANG, TokenType.MINUS)) return Call();
 
         var @operator = Previous();
         var right     = Unary();
         return new Unary(@operator, right);
+    }
+    
+    private Expression Call()
+    {
+        var expression = Primary();
+
+        while (true)
+        {
+            if (Match(TokenType.LEFT_PAREN))
+            {
+                expression = FinishCall(expression);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return expression;
+    }
+    
+    private Call FinishCall(Expression _callee)
+    {
+        List<Expression> arguments = [];
+
+        if (!Check(TokenType.RIGHT_PAREN))
+        {
+            do
+            {
+                if (arguments.Count >= 255)
+                {
+                    Error("Cannot have more than 255 arguments.", Peek());
+                }
+
+                arguments.Add(Expression());
+            } while (Match(TokenType.COMMA));
+        }
+
+        var paren = Consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+        return new Call(_callee, paren, arguments);
     }
 
     private Expression Primary()

@@ -1,11 +1,10 @@
 using AST;
 using Token;
 
-internal class Program
+class Program
 {
     public static           bool         HadError        = false;
     public static           bool         HadRuntimeError = false;
-    private static readonly List<string> _COMMANDS       = ["tokenize", "parse", "evaluate", "run"];
 
     public static void Main(string[] _args)
     {
@@ -41,49 +40,6 @@ internal class Program
 
     private static void Run(string _command, string _source)
     {
-        // if (!_COMMANDS.Contains(_command))
-        // {
-        //     Console.Error.WriteLine($"Unknown command: {_command}");
-        //     Environment.Exit(1);
-        // }
-        //
-        // Tokenizer tokenizer = new(_source);
-        // tokenizer.Scan();
-        //
-        // var tokens = tokenizer.GetTokens();
-        //
-        // if (HadError) return;
-        //
-        // if (_command == _COMMANDS[0])
-        // {
-        //     foreach (var token in tokens) Console.WriteLine(token);
-        //     return;
-        // }
-        //
-        // Parser.Parser parser     = new(tokens);
-        // var           statements = parser.Parse();
-        //
-        // if (HadError) return;
-        //
-        // if (_command == _COMMANDS[1])
-        // {
-        //     var expression = parser.ParseExpression();
-        //     Console.WriteLine(Printer.Print(expression));
-        //     return;
-        // }
-        //
-        // if (_command == _COMMANDS[2])
-        // {
-        //     var expression = parser.ParseExpression();
-        //     Console.WriteLine(Interpreter.Interpret(expression));
-        //     
-        //     return;
-        // }
-        //
-        // if (_command != _COMMANDS[3]) return;
-        //
-        // foreach (var statement in statements) Console.WriteLine(Interpreter.Interpret(statement));
-
         Tokenizer tokenizer = new(_source);
         tokenizer.Scan();
         
@@ -117,6 +73,7 @@ internal class Program
                 
                 var statements = parser.Parse();
                 Interpreter.Interpret(statements);
+                // Console.WriteLine(Printer.Print(statements));
                 break;
         }
     }

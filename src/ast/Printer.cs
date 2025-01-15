@@ -12,13 +12,13 @@ public static class Printer
         return _expression.Accept(new AstPrinter());
     }
     
-    public static string Print(List<Statement.Statement> _statements)
+    public static string Print(List<Statement.Statement?> _statements)
     {
         var builder = new StringBuilder();
 
         foreach (var statement in _statements)
         {
-            builder.Append(statement.Accept(new AstPrinter()));
+            builder.Append(statement?.Accept(new AstPrinter()));
         }
 
         return builder.ToString();
@@ -75,6 +75,23 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
     public string VisitLogicalExpression(Logical _expression)
     {
         return Parenthesize(_expression.Operator.Lexeme, _expression.Left, _expression.Right);
+    }
+    
+    public string VisitCallExpression(Call _expression)
+    {
+        var builder = new StringBuilder();
+        
+        builder.Append(_expression.Callee.Accept(this));
+        builder.Append(" (call ");
+        
+        foreach (var argument in _expression.Arguments)
+        {
+            builder.Append(argument?.Accept(this));
+        }
+        
+        builder.Append(')');
+        
+        return builder.ToString();
     }
     
     public string VisitWhileStatement(WhileStatement _expression)

@@ -54,6 +54,11 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
 {
     private Definitions _definitions = new();
     
+    private Dictionary<string, ICallable> _nativesFunctions = new()
+    {
+        { "clock", new Clock() }
+    };
+    
     public object? VisitLiteralExpression(Literal _expression)
     {
         return _expression.Value;
@@ -72,7 +77,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         {
             case Token.TokenType.MINUS:
                 CheckNumberOperand(_expression.Operator, right);
-                return -(double)right;
+                return Convert.ToDouble(right) * -1f;
             case Token.TokenType.BANG:
                 return !IsTruthy(right);
             default:
@@ -97,41 +102,49 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
 
         switch (_expression.Operator.Type)
         {
-            case Token.TokenType.MINUS:
-                CheckNumberOperands(_expression.Operator, left, right);
-                return (double)left - (double)right;
-            case Token.TokenType.SLASH:
-                CheckNumberOperands(_expression.Operator, left, right);
-                return (double)left / (double)right;
-            case Token.TokenType.STAR:
-                CheckNumberOperands(_expression.Operator, left, right);
-                return (double)left * (double)right;
-            case Token.TokenType.PLUS:
-                return left switch
-                {
-                    double dLeft when right is double dRight => dLeft + dRight,
-                    string sLeft when right is string sRight => sLeft + sRight,
-                    _ => throw new RuntimeError(_expression.Operator, "Operands must be two numbers or two strings.")
-                };
+            // case Token.TokenType.MINUS:
+            //     CheckNumberOperands(_expression.Operator, left, right);
+            //     return Convert.ToDouble(left) - Convert.ToDouble(right);
+            // case Token.TokenType.SLASH:
+            //     CheckNumberOperands(_expression.Operator, left, right);
+            //     return Convert.ToDouble(left) / Convert.ToDouble(right);
+            // case Token.TokenType.STAR:
+            //     CheckNumberOperands(_expression.Operator, left, right);
+            //     return Convert.ToDouble(left) * Convert.ToDouble(right);
+            // case Token.TokenType.PLUS:
+            //     return left switch
+            //     {
+            //         double dLeft when right is double dRight => dLeft + dRight,
+            //         string sLeft when right is string sRight => sLeft + sRight,
+            //         // case when numbers are long
+            //         long lLeft when right is long lRight => lLeft + lRight,
+            //         // case when left is long and right is double
+            //         long lLeft when right is double dRight => lLeft + dRight,
+            //         // case when left is double and right is long
+            //         double dLeft when right is long lRight => dLeft + lRight,
+            //         _ => throw new RuntimeError(_expression.Operator, "Operands must be two numbers or two strings.")
+            //     };
             case Token.TokenType.GREATER:
                 CheckNumberOperands(_expression.Operator, left, right);
-                return (double)left > (double)right;
+                return Convert.ToDouble(left) > Convert.ToDouble(right);
             case Token.TokenType.GREATER_EQUAL:
                 CheckNumberOperands(_expression.Operator, left, right);
-                return (double)left >= (double)right;
+                return Convert.ToDouble(left) >= Convert.ToDouble(right);
             case Token.TokenType.LESS:
                 CheckNumberOperands(_expression.Operator, left, right);
-                return (double)left < (double)right;
+                return Convert.ToDouble(left) < Convert.ToDouble(right);
             case Token.TokenType.LESS_EQUAL:
                 CheckNumberOperands(_expression.Operator, left, right);
-                return (double)left <= (double)right;
+                return Convert.ToDouble(left) <= Convert.ToDouble(right);
             case Token.TokenType.BANG_EQUAL:
                 return !IsEqual(left, right);
             case Token.TokenType.EQUAL_EQUAL:
                 return IsEqual(left, right);
-            default:
-                return null;
         }
+        
+        var operation = BinaryOperationsFactory.GetBinaryOperation(_expression.Operator.Type).Apply(left, right);
+        if (operation == null) throw new RuntimeError(_expression.Operator, "Operands must be two numbers or two strings.");
+        return operation;
     }
     
     public object? VisitSetExpression(Set _expression)
@@ -162,7 +175,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     
     public object? VisitVariableExpression(Variable _expression)
     {
-        return _definitions.Get(_expression.Name);
+        return _nativesFunctions.TryGetValue(_expression.Name.Lexeme, value: out var expression) ? expression : _definitions.Get(_expression.Name);
     }
     
     public object? VisitAssignExpression(Assign _expression)
@@ -187,6 +200,24 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
 
         return _expression.Right.Accept(this);
     }
+    
+    public object? VisitCallExpression(Call _expression)
+    {
+        var callee = _expression.Callee.Accept(this);
+        var arguments = _expression.Arguments.Select(_argument => _argument.Accept(this)).ToList();
+
+        if (callee is not ICallable function)
+        {
+            throw new RuntimeError(_expression.Paren, "Can only call functions and classes.");
+        }
+
+        if (arguments.Count != function.Arity())
+        {
+            throw new RuntimeError(_expression.Paren, $"Expected {function.Arity()} arguments but got {arguments.Count}.");
+        }
+
+        return function.Call(this, arguments);
+    }
 
     private static bool IsTruthy(object? _value)
     {
@@ -210,13 +241,13 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
 
     private static void CheckNumberOperand(Token.Token _operator, object? _operand)
     {
-        if (_operand is double) return;
+        if (_operand is double or long) return;
         throw new RuntimeError(_operator, "Operand must be a number.");
     }
 
     private static void CheckNumberOperands(Token.Token _operator, object? _left, object? _right)
     {
-        if (_left is double && _right is double) return;
+        if (_left is double or long && _right is double or long) return;
         throw new RuntimeError(_operator, "Operands must be numbers.");
     }
 
