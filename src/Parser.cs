@@ -14,6 +14,7 @@ using AST.Statement;
 // whileStmt      → "while" "(" expression ")" statement ;
 // forStmt        → "for" "(" ( varStmt | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 // funStmt        → "fun" IDENTIFIER "(" parameters? ")" block ;
+// returnStmt     → "return" expression? ";" ;
 // declaration    → statement ;
 
 // expression     → assignment ;
@@ -126,6 +127,7 @@ public class Parser(List<Token> _tokens)
         if (Match(TokenType.FOR)) return ForStatement();
         if (Match(TokenType.IF)) return IfStatement();
         if (Match(TokenType.PRINT)) return PrintStatement();
+        if (Match(TokenType.RETURN)) return ReturnStatement();
         if (Match(TokenType.WHILE)) return WhileStatement();
         if (Match(TokenType.LEFT_BRACE)) return BlockStatement();
 
@@ -137,6 +139,15 @@ public class Parser(List<Token> _tokens)
         var value = Expression();
         Consume(TokenType.SEMICOLON, "Expect ';' after value.");
         return new PrintStatement(value);
+    }
+
+    private ReturnStatement ReturnStatement()
+    {
+        var         keyword = Previous();
+        var value   = !(Check(TokenType.SEMICOLON)) ? Expression() : null;
+
+        Consume(TokenType.SEMICOLON, "Expect ';' after value.");
+        return new ReturnStatement(keyword, value);
     }
 
     private ExpressionStatement ExpressionStatement()

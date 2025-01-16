@@ -3,19 +3,13 @@ using Env;
 
 namespace AST;
 
-public class Function : ICallable
+public class Function(FunctionStatement _declaration, Definitions _closure, bool _isInitializer)
+    : ICallable
 {
-    private FunctionStatement Declaration { get; }
-    private Definitions Closure { get; }
-    private bool IsInitializer { get; }
-    
-    public Function(FunctionStatement _declaration, Definitions _closure, bool _isInitializer)
-    {
-        Declaration = _declaration;
-        Closure = _closure;
-        IsInitializer = _isInitializer;
-    }
-    
+    private FunctionStatement Declaration   { get; } = _declaration;
+    private Definitions       Closure       { get; } = _closure;
+    private bool              IsInitializer { get; } = _isInitializer;
+
     public int Arity()
     {
         return Declaration.Parameters.Count;
@@ -30,20 +24,25 @@ public class Function : ICallable
             environment.Define(Declaration.Parameters[i].Lexeme, _arguments[i]);
         }
         
-        // try
-        // {
+        try
+        {
             _interpreter.ExecuteBlock(Declaration.Body, environment);
-        // }
-        // catch (Return returnValue)
-        // {
-        //     return IsInitializer ? Closure.GetAt(0, "this") : returnValue.Value;
-        // }
+        }
+        catch (Return returnValue)
+        {
+            return returnValue.Value;
+        }
         
-        return IsInitializer ? Closure.GetAt(0, "this") : null;
+        return null;
     }
 
     public override string ToString()
     {
         return $"<fn {Declaration.Name.Lexeme}>";
     }
+}
+
+public class Return(object? _value) : Exception
+{
+    public object? Value { get; } = _value;
 }

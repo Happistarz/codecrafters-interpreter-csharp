@@ -130,6 +130,23 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
         return builder.ToString();
     }
 
+    public string VisitReturnStatement(ReturnStatement _expression)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append("(return");
+
+        if (_expression.Value != null)
+        {
+            builder.Append(' ');
+            builder.Append(_expression.Value.Accept(this));
+        }
+
+        builder.Append(')');
+
+        return builder.ToString();
+    }
+
     private string Parenthesize(string _name, params Expression.Expression[] _expressions)
     {
         var builder = new StringBuilder();

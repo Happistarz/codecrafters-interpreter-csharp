@@ -19,6 +19,7 @@ public interface IStatementVisitor<out T>
     T VisitIfStatement(IfStatement                 _expression);
     T VisitWhileStatement(WhileStatement           _expression);
     T VisitFunctionStatement(FunctionStatement       _expression);
+    T VisitReturnStatement(ReturnStatement         _expression);
 }
 
 public class ExpressionStatement(Expression _expression) : Statement
@@ -94,5 +95,16 @@ public class FunctionStatement(Token.Token _name, List<Token.Token> _parameters,
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {
         return _statementVisitor.VisitFunctionStatement(this);
+    }
+}
+
+public class ReturnStatement(Token.Token _keyword, Expression? _value) : Statement
+{
+    public Token.Token Keyword { get; } = _keyword;
+    public Expression? Value   { get; } = _value;
+
+    public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
+    {
+        return _statementVisitor.VisitReturnStatement(this);
     }
 }

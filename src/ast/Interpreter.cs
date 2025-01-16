@@ -301,4 +301,12 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         _definitions.Define(_statement.Name.Lexeme, function);
         return null;
     }
+
+    public object? VisitReturnStatement(ReturnStatement _statement)
+    {
+        object? value = null;
+        if (_statement.Value != null) value = _statement.Value.Accept(this);
+
+        throw new Return(value);
+    }
 }
