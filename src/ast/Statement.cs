@@ -18,6 +18,7 @@ public interface IStatementVisitor<out T>
     T VisitBlockStatement(BlockStatement           _expression);
     T VisitIfStatement(IfStatement                 _expression);
     T VisitWhileStatement(WhileStatement           _expression);
+    T VisitFunctionStatement(FunctionStatement       _expression);
 }
 
 public class ExpressionStatement(Expression _expression) : Statement
@@ -81,5 +82,17 @@ public class WhileStatement(Expression _condition, Statement _body) : Statement
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {
         return _statementVisitor.VisitWhileStatement(this);
+    }
+}
+
+public class FunctionStatement(Token.Token _name, List<Token.Token> _parameters, List<Statement?> _body) : Statement
+{
+    public Token.Token       Name       { get; } = _name;
+    public List<Token.Token> Parameters { get; } = _parameters;
+    public List<Statement?>  Body       { get; } = _body;
+
+    public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
+    {
+        return _statementVisitor.VisitFunctionStatement(this);
     }
 }

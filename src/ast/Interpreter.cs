@@ -102,28 +102,6 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
 
         switch (_expression.Operator.Type)
         {
-            // case Token.TokenType.MINUS:
-            //     CheckNumberOperands(_expression.Operator, left, right);
-            //     return Convert.ToDouble(left) - Convert.ToDouble(right);
-            // case Token.TokenType.SLASH:
-            //     CheckNumberOperands(_expression.Operator, left, right);
-            //     return Convert.ToDouble(left) / Convert.ToDouble(right);
-            // case Token.TokenType.STAR:
-            //     CheckNumberOperands(_expression.Operator, left, right);
-            //     return Convert.ToDouble(left) * Convert.ToDouble(right);
-            // case Token.TokenType.PLUS:
-            //     return left switch
-            //     {
-            //         double dLeft when right is double dRight => dLeft + dRight,
-            //         string sLeft when right is string sRight => sLeft + sRight,
-            //         // case when numbers are long
-            //         long lLeft when right is long lRight => lLeft + lRight,
-            //         // case when left is long and right is double
-            //         long lLeft when right is double dRight => lLeft + dRight,
-            //         // case when left is double and right is long
-            //         double dLeft when right is long lRight => dLeft + lRight,
-            //         _ => throw new RuntimeError(_expression.Operator, "Operands must be two numbers or two strings.")
-            //     };
             case Token.TokenType.GREATER:
                 CheckNumberOperands(_expression.Operator, left, right);
                 return Convert.ToDouble(left) > Convert.ToDouble(right);
@@ -275,8 +253,8 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         ExecuteBlock(_statement.Statements, new Definitions(_definitions));
         return null;
     }
-    
-    private void ExecuteBlock(List<Statement.Statement?> _statements, Definitions _def)
+
+    public void ExecuteBlock(List<Statement.Statement?> _statements, Definitions _def)
     {
         var previous = _definitions;
         try
@@ -314,6 +292,13 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
             _statement.Body.Accept(this);
         }
 
+        return null;
+    }
+    
+    public object? VisitFunctionStatement(FunctionStatement _statement)
+    {
+        var function = new Function(_statement, _definitions,false);
+        _definitions.Define(_statement.Name.Lexeme, function);
         return null;
     }
 }

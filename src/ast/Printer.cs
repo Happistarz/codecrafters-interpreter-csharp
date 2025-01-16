@@ -86,7 +86,7 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
         
         foreach (var argument in _expression.Arguments)
         {
-            builder.Append(argument?.Accept(this));
+            builder.Append(argument.Accept(this));
         }
         
         builder.Append(')');
@@ -102,6 +102,29 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
         builder.Append(_expression.Condition.Accept(this));
         builder.Append(' ');
         builder.Append(_expression.Body.Accept(this));
+        builder.Append(')');
+
+        return builder.ToString();
+    }
+
+    public string VisitFunctionStatement(FunctionStatement _expression)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append("(fun ");
+        builder.Append(_expression.Name.Lexeme);
+        builder.Append(" (");
+
+        foreach (var parameter in _expression.Parameters)
+        {
+            builder.Append(parameter.Lexeme).Append(' ');
+        }
+
+        builder.Append(") ");
+        foreach (var statement in _expression.Body)
+        {
+            builder.Append(statement?.Accept(this));
+        }
         builder.Append(')');
 
         return builder.ToString();

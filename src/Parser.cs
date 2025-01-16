@@ -13,6 +13,7 @@ using AST.Statement;
 // ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 // whileStmt      → "while" "(" expression ")" statement ;
 // forStmt        → "for" "(" ( varStmt | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+// funStmt        → "fun" IDENTIFIER "(" parameters? ")" block ;
 // declaration    → statement ;
 
 // expression     → assignment ;
@@ -110,6 +111,7 @@ public class Parser(List<Token> _tokens)
         try
         {
             if (Match(TokenType.VAR)) return VarStatement();
+            if (Match(TokenType.FUN)) return FunctionStatement();
             return Statement();
         }
         catch (ParseError)
@@ -154,6 +156,33 @@ public class Parser(List<Token> _tokens)
         Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
 
         return new VarStatement(name, initializer);
+    }
+    
+    private FunctionStatement FunctionStatement()
+    {
+        var name = Consume(TokenType.IDENTIFIER, "Expect function name.");
+        Consume(TokenType.LEFT_PAREN, "Expect '(' after function name.");
+
+        List<Token> parameters = [];
+
+        if (!Check(TokenType.RIGHT_PAREN))
+        {
+            do
+            {
+                if (parameters.Count >= 255)
+                {
+                    Error("Cannot have more than 255 parameters.", Peek());
+                }
+
+                parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+            } while (Match(TokenType.COMMA));
+        }
+
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+        Consume(TokenType.LEFT_BRACE, "Expect '{' before function body.");
+
+        var body = BlockStatement();
+        return new FunctionStatement(name, parameters, body.Statements);
     }
 
     private BlockStatement BlockStatement()
