@@ -1,8 +1,7 @@
-﻿fun fib(n) {
-  if (n < 2) return n;
-  return fib(n - 2) + fib(n - 1);
+﻿fun void function() {
+  print "Hello, World!";
+  return;
+  print "Unreachable code.";
 }
 
-var start = clock();
-print fib(32) == 2178309;
-print (clock() - start) < 5; // 5 seconds
+function();

@@ -18,7 +18,7 @@ public interface IStatementVisitor<out T>
     T VisitBlockStatement(BlockStatement           _expression);
     T VisitIfStatement(IfStatement                 _expression);
     T VisitWhileStatement(WhileStatement           _expression);
-    T VisitFunctionStatement(FunctionStatement       _expression);
+    T VisitFunctionStatement(FunctionStatement     _expression);
     T VisitReturnStatement(ReturnStatement         _expression);
 }
 
@@ -42,8 +42,9 @@ public class PrintStatement(Expression _expression) : Statement
     }
 }
 
-public class VarStatement(Token.Token _name, Expression? _initializer) : Statement
+public class VarStatement(Token.Token _type, Token.Token _name, Expression? _initializer) : Statement
 {
+    public Token.Token Type        { get; } = _type;
     public Token.Token Name        { get; } = _name;
     public Expression? Initializer { get; } = _initializer;
 
@@ -86,11 +87,19 @@ public class WhileStatement(Expression _condition, Statement _body) : Statement
     }
 }
 
-public class FunctionStatement(Token.Token _name, List<Token.Token> _parameters, List<Statement?> _body) : Statement
+public class FunctionStatement(
+    Token.Token                      _type,
+    Token.Token                      _name,
+    List<(Token.Token, Token.Token)> _parameters,
+    List<Statement?>                 _body) : Statement
 {
-    public Token.Token       Name       { get; } = _name;
-    public List<Token.Token> Parameters { get; } = _parameters;
-    public List<Statement?>  Body       { get; } = _body;
+    public Token.Token Type { get; } = _type;
+
+    public Token.Token Name { get; } = _name;
+
+    // public List<Token.Token> Parameters { get; } = _parameters;
+    public List<(Token.Token, Token.Token)> Parameters { get; } = _parameters;
+    public List<Statement?>                 Body       { get; } = _body;
 
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {

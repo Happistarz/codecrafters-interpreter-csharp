@@ -34,20 +34,25 @@ public enum TokenType
 
     // Keywords
     AND,
+    BOOL_TYPE,
     CLASS,
+    DOUBLE_TYPE,
     ELSE,
     FALSE,
+    FLOAT_TYPE,
     FOR,
     FUN,
     IF,
+    INT_TYPE,
     NIL,
     OR,
     PRINT,
     RETURN,
+    STRING_TYPE,
     SUPER,
     THIS,
     TRUE,
-    VAR,
+    VOID_TYPE,
     WHILE,
 
     EOF

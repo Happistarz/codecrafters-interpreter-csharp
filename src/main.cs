@@ -53,11 +53,13 @@ class Program
             
             case "parse":
                 
-                var expression = parser.ParseExpression();
+                // var expression = parser.ParseExpression();
+                var statements0 = parser.Parse();
                 
                 if (HadError) return;
                 
-                Console.WriteLine(Printer.Print(expression));
+                // Console.WriteLine(Printer.Print(expression));
+                Console.WriteLine(Printer.Print(statements0));
                 break;
             
             case "evaluate":

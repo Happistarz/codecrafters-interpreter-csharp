@@ -21,7 +21,7 @@ public class Function(FunctionStatement _declaration, Definitions _closure, bool
         
         for (var i = 0; i < Declaration.Parameters.Count; i++)
         {
-            environment.Define(Declaration.Parameters[i].Lexeme, _arguments[i]);
+            environment.Define(Declaration.Parameters[i].Item2.Lexeme, _arguments[i]);
         }
         
         try

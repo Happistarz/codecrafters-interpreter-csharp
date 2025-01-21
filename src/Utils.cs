@@ -10,7 +10,7 @@ public static class Utils
         Console.Error.WriteLine($"[line {_line}] Error{_where}: {_message}");
         Program.HadError = true;
     }
-    
+
     public static void RuntimeError(int _line, string _message)
     {
         Console.Error.WriteLine("{0}\n[line {1}]", _message, _line);
@@ -39,7 +39,9 @@ public static class Utils
             null                 => _nullString,
             string s             => s,
             double d when _fixed => d % 1 == 0 ? d.ToString("F1") : d.ToString(CultureInfo.InvariantCulture),
-            double d             => d.ToString(CultureInfo.InvariantCulture),
+            double d             => $"{d.ToString(CultureInfo.InvariantCulture)}d",
+            float f when _fixed  => f % 1 == 0 ? f.ToString("F1") : f.ToString(CultureInfo.InvariantCulture),
+            float f              => $"{f.ToString(CultureInfo.InvariantCulture)}f",
             bool b               => b.ToString().ToLower(),
             _                    => _value.ToString() ?? string.Empty
         };

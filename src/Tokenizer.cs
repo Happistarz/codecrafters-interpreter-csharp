@@ -22,7 +22,13 @@ public class Tokenizer(string _content)
             { "super", TokenType.SUPER },
             { "this", TokenType.THIS },
             { "true", TokenType.TRUE },
-            { "var", TokenType.VAR },
+            // { "var", TokenType.VAR },
+            { "string", TokenType.STRING_TYPE },
+            { "int", TokenType.INT_TYPE },
+            { "double", TokenType.DOUBLE_TYPE },
+            { "float", TokenType.FLOAT_TYPE },
+            { "bool", TokenType.BOOL_TYPE },
+            { "void", TokenType.VOID_TYPE },
             { "while", TokenType.WHILE }
         };
 
@@ -208,10 +214,32 @@ public class Tokenizer(string _content)
             while (Utils.IsDigit(Peek())) Advance();
         }
 
-        var value = double.Parse(
-            _content.Substring(_start, _current - _start).Replace(',', '.')
-                                 , CultureInfo.InvariantCulture);
-        AddToken(TokenType.NUMBER, value);
+        object value;
+        
+        switch (Peek())
+        {
+            case 'd':
+            case 'D':
+                value = double.Parse(
+                    _content.Substring(_start, _current - _start).Replace(',', '.')
+                                         , CultureInfo.InvariantCulture);
+                Advance();
+                AddToken(TokenType.DOUBLE_TYPE, value);
+                break;
+            
+            case 'f':
+            case 'F':
+                value = float.Parse(
+                    _content.Substring(_start, _current - _start).Replace(',', '.')
+                                        , CultureInfo.InvariantCulture);
+                Advance();
+                AddToken(TokenType.FLOAT_TYPE, value);
+                break;
+            default:
+                value = int.Parse(_content.AsSpan(_start, _current - _start), CultureInfo.InvariantCulture);
+                AddToken(TokenType.INT_TYPE, value);
+                break;
+        }
     }
 
     private void Identifier()

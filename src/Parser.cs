@@ -8,14 +8,17 @@ using AST.Statement;
 // statement      → exprStmt | printStmt | varStmt | block | ifStmt ;
 // exprStmt       → expression ";" ;
 // printStmt      → "print" expression ";" ;
-// varStmt        → "var" IDENTIFIER ( "=" expression )? ";" ;
+// varStmt        → type IDENTIFIER ( "=" expression )? ";" ;
 // block          → "{" declaration* "}" ;
 // ifStmt         → "if" "(" expression ")" statement ( "else" statement )? ;
 // whileStmt      → "while" "(" expression ")" statement ;
 // forStmt        → "for" "(" ( varStmt | exprStmt | ";" ) expression? ";" expression? ")" statement ;
-// funStmt        → "fun" IDENTIFIER "(" parameters? ")" block ;
+// funStmt        → "fun" type IDENTIFIER "(" parameters? ")" block ;
+// parameters     → type IDENTIFIER ( "," type IDENTIFIER )* ;
 // returnStmt     → "return" expression? ";" ;
 // declaration    → statement ;
+
+// type           → "float" | "double" | "int" | "string" | "bool" ;
 
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment | equality ;
@@ -28,6 +31,7 @@ using AST.Statement;
 // unary          → ( "!" | "-" ) unary | primary ;
 // call           → primary ( "(" arguments? ")" )* ;
 // primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
+// number         → literal ("D" | "F")? ;
 
 public class ParseError : Exception;
 
@@ -38,6 +42,9 @@ public class RuntimeError(Token _token, string _message) : Exception(_message)
 
 public class Parser(List<Token> _tokens)
 {
+    private static readonly List<TokenType> _VAR_TYPES =
+        [TokenType.FLOAT_TYPE, TokenType.DOUBLE_TYPE, TokenType.INT_TYPE, TokenType.STRING_TYPE, TokenType.BOOL_TYPE];
+
     private int _current;
 
     private bool IsAtEnd()
@@ -68,6 +75,16 @@ public class Parser(List<Token> _tokens)
         throw Error(_message, Peek());
     }
 
+    private Token ConsumeMany(List<TokenType> _types, string _message)
+    {
+        if (_types.Any(Check))
+        {
+            return Advance();
+        }
+
+        throw Error(_message, Peek());
+    }
+
     private bool Match(params TokenType[] _types)
     {
         if (!_types.Any(Check)) return false;
@@ -79,7 +96,6 @@ public class Parser(List<Token> _tokens)
     private bool Check(TokenType _type)
     {
         if (IsAtEnd()) return false;
-
         return Peek().Type == _type;
     }
 
@@ -111,7 +127,8 @@ public class Parser(List<Token> _tokens)
     {
         try
         {
-            if (Match(TokenType.VAR)) return VarStatement();
+            if (_VAR_TYPES.Contains(Peek().Type)) return VarStatement();
+
             if (Match(TokenType.FUN)) return FunctionStatement();
             return Statement();
         }
@@ -143,7 +160,7 @@ public class Parser(List<Token> _tokens)
 
     private ReturnStatement ReturnStatement()
     {
-        var         keyword = Previous();
+        var keyword = Previous();
         var value   = !(Check(TokenType.SEMICOLON)) ? Expression() : null;
 
         Consume(TokenType.SEMICOLON, "Expect ';' after value.");
@@ -159,6 +176,7 @@ public class Parser(List<Token> _tokens)
 
     private VarStatement VarStatement()
     {
+        var type = ConsumeMany(_VAR_TYPES, "Expect variable type.");
         var name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
 
         Expression? initializer = null;
@@ -166,16 +184,17 @@ public class Parser(List<Token> _tokens)
         if (Match(TokenType.EQUAL)) initializer = Expression();
         Consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
 
-        return new VarStatement(name, initializer);
+        return new VarStatement(type, name, initializer);
     }
-    
+
     private FunctionStatement FunctionStatement()
     {
+        var type = ConsumeMany([.._VAR_TYPES, TokenType.VOID_TYPE], "Expect return type.");
         var name = Consume(TokenType.IDENTIFIER, "Expect function name.");
         Consume(TokenType.LEFT_PAREN, "Expect '(' after function name.");
-
-        List<Token> parameters = [];
-
+        
+        List<(Token, Token)> parameters = [];
+        
         if (!Check(TokenType.RIGHT_PAREN))
         {
             do
@@ -185,15 +204,17 @@ public class Parser(List<Token> _tokens)
                     Error("Cannot have more than 255 parameters.", Peek());
                 }
 
-                parameters.Add(Consume(TokenType.IDENTIFIER, "Expect parameter name."));
+                var paramType = ConsumeMany(_VAR_TYPES, "Expect parameter type.");
+                var paramName = Consume(TokenType.IDENTIFIER, "Expect parameter name.");
+                parameters.Add((paramType, paramName));
             } while (Match(TokenType.COMMA));
         }
 
         Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
-        Consume(TokenType.LEFT_BRACE, "Expect '{' before function body.");
+        Consume(TokenType.LEFT_BRACE,  "Expect '{' before function body.");
 
         var body = BlockStatement();
-        return new FunctionStatement(name, parameters, body.Statements);
+        return new FunctionStatement(type, name, parameters, body.Statements);
     }
 
     private BlockStatement BlockStatement()
@@ -243,7 +264,8 @@ public class Parser(List<Token> _tokens)
         {
             initializer = null;
         }
-        else if (Match(TokenType.VAR))
+        // else if (Match(TokenType.VAR))
+        else if (_VAR_TYPES.Contains(Peek().Type))
         {
             initializer = VarStatement();
         }
@@ -402,7 +424,7 @@ public class Parser(List<Token> _tokens)
         var right     = Unary();
         return new Unary(@operator, right);
     }
-    
+
     private Expression Call()
     {
         var expression = Primary();
@@ -421,7 +443,7 @@ public class Parser(List<Token> _tokens)
 
         return expression;
     }
-    
+
     private Call FinishCall(Expression _callee)
     {
         List<Expression> arguments = [];
@@ -450,15 +472,10 @@ public class Parser(List<Token> _tokens)
         if (Match(TokenType.TRUE)) return new Literal(true);
         if (Match(TokenType.NIL)) return new Literal(null);
 
-        if (Match(TokenType.NUMBER, TokenType.STRING))
-        {
+        if (Match(TokenType.INT_TYPE, TokenType.FLOAT_TYPE, TokenType.DOUBLE_TYPE, TokenType.STRING, TokenType.STRING_TYPE)) 
             return new Literal(Previous().Literal);
-        }
 
-        if (Match(TokenType.IDENTIFIER))
-        {
-            return new Variable(Previous());
-        }
+        if (Match(TokenType.IDENTIFIER)) return new Variable(Previous());
 
         if (!Match(TokenType.LEFT_PAREN)) throw Error("Expect expression.", Peek());
 
@@ -485,7 +502,12 @@ public class Parser(List<Token> _tokens)
             {
                 case TokenType.CLASS:
                 case TokenType.FUN:
-                case TokenType.VAR:
+                // case TokenType.VAR:
+                case TokenType.FLOAT_TYPE:
+                case TokenType.DOUBLE_TYPE:
+                case TokenType.INT_TYPE:
+                case TokenType.STRING_TYPE:
+                case TokenType.BOOL_TYPE:
                 case TokenType.FOR:
                 case TokenType.IF:
                 case TokenType.WHILE:

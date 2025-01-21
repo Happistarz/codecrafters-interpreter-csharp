@@ -1,5 +1,4 @@
 ﻿using Parser;
-using Utils = UTILS.Utils;
 
 namespace Env;
 
@@ -11,13 +10,15 @@ public class Definitions(Definitions? _enclosing = null)
 
     public void Assign(Token.Token _name, object? _value)
     {
-        if (_values.ContainsKey(_name.Lexeme))
+        if (_values.TryGetValue(_name.Lexeme, out var value))
         {
+            if (_value?.GetType() != value?.GetType()) throw new RuntimeError(_name, $"Cannot assign '{_value}' to '{_name.Lexeme}' of type '{value?.GetType()}'.");
+
             _values[_name.Lexeme] = _value;
             return;
         }
 
-        if (_enclosing == null) Utils.RuntimeError(_name.Line, $"Undefined variable '{_name.Lexeme}'.");
+        if (_enclosing == null) throw new RuntimeError(_name, $"Undefined variable '{_name.Lexeme}'.");
 
         _enclosing?.Assign(_name, _value);
     }
@@ -47,7 +48,7 @@ public class Definitions(Definitions? _enclosing = null)
         var definitions = this;
         for (var i = 0; i < _distance; i++)
         {
-            definitions = definitions._enclosing!;
+            definitions = definitions._enclosing ?? definitions;
         }
 
         return definitions;
