@@ -1,7 +1,34 @@
-﻿fun void function() {
-  print "Hello, World!";
-  return;
-  print "Unreachable code.";
+﻿class Player {
+    
+    private int health;
+
+    public constructor() {
+        this.health = 10;
+    }
+    
+    public void damage(int amount) {
+        this.health = this.health - amount;
+    }
 }
 
-function();
+class Game {
+    private Player player;
+    
+    public constructor() {
+        this.player = new Player();
+    }
+    
+    public void run() {
+        this.player.damage(5);
+    }
+    
+    public Player getPlayer() {
+        return this.player;
+    }
+}
+
+Game game = new Game();
+game.run();
+print game.getPlayer().health; // Expect 5
+int x = 5;
+print x; // Expect 5

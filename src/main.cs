@@ -43,7 +43,7 @@ class Program
         Tokenizer tokenizer = new(_source);
         tokenizer.Scan();
         
-        Parser.Parser parser = new(tokenizer.GetTokens());
+        Parser.Parser parser = new(tokenizer.GetTokens(), _source);
         switch (_command)
         {
             case "tokenize":
@@ -74,6 +74,9 @@ class Program
             case "run":
                 
                 var statements = parser.Parse();
+                
+                if (HadError) return;
+                
                 Interpreter.Interpret(statements);
                 // Console.WriteLine(Printer.Print(statements));
                 break;

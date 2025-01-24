@@ -21,7 +21,7 @@ public class Function(FunctionStatement _declaration, Definitions _closure, bool
         
         for (var i = 0; i < Declaration.Parameters.Count; i++)
         {
-            environment.Define(Declaration.Parameters[i].Item2.Lexeme, _arguments[i]);
+            environment.Define(Declaration.Parameters[i].Token.Lexeme, _arguments[i]);
         }
         
         try
@@ -30,10 +30,18 @@ public class Function(FunctionStatement _declaration, Definitions _closure, bool
         }
         catch (Return returnValue)
         {
-            return returnValue.Value;
+            return IsInitializer ? Closure.GetAt(0, "this") : returnValue.Value;
         }
         
-        return null;
+        return IsInitializer ? Closure.GetAt(0, "this") : null;
+    }
+    
+    public Function Bind(Instance _instance)
+    {
+        var environment = new Definitions(Closure);
+        environment.Define("this", _instance);
+        
+        return new Function(Declaration, environment, IsInitializer);
     }
 
     public override string ToString()

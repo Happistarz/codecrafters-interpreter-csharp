@@ -5,9 +5,17 @@ namespace UTILS;
 
 public static class Utils
 {
-    public static void Error(int _line, string _where, string _message)
+    public static void Error(int _line, string _where, string _message, string? _content = null)
     {
         Console.Error.WriteLine($"[line {_line}] Error{_where}: {_message}");
+        if (_content != null)
+        {
+            var contentLine = _content.Split('\n')[_line - 1];
+            Console.Error.WriteLine(contentLine);
+            // write the caret (^) under the error
+            var caret = new string(' ', contentLine.IndexOf(contentLine.Trim(), StringComparison.Ordinal));
+            Console.Error.WriteLine(caret + new string('^', contentLine.Trim().Length));
+        }
         Program.HadError = true;
     }
 

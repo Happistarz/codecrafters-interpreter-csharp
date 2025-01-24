@@ -1,19 +1,20 @@
-﻿using Env;
+﻿using AST.Classes;
+using Env;
 using Parser;
 using UTILS;
+using AST.Statement;
+using AST.Expression;
+using AST.Operations;
 
 namespace AST;
 
-using Expression;
-using Statement;
-
 public static class Interpreter
 {
-    public static string Interpret(Expression.Expression _expression)
+    public static string Interpret(Expression.Expression? _expression)
     {
         try
         {
-            var value = _expression.Accept(new InterpreterEvaluator());
+            var value = _expression?.Accept(new InterpreterEvaluator());
             return Utils.GetLiteralString(value, _fixed: false);
         }
         catch (RuntimeError error)
@@ -101,11 +102,9 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         return operation;
     }
 
-    public object? VisitVariableExpression(Variable _expression)
+    public object VisitVariableExpression(Variable _expression)
     {
-        return _nativesFunctions.TryGetValue(_expression.Name.Lexeme, value: out var expression)
-            ? expression
-            : _definitions.Get(_expression.Name);
+        return LookUpVariable(_expression.Name, _expression);
     }
 
     public object? VisitAssignExpression(Assign _expression)
@@ -148,6 +147,59 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         }
 
         return function.Call(this, arguments);
+    }
+
+    public object VisitThisExpression(This _expression)
+    {
+        return LookUpVariable(_expression.Keyword, _expression);
+    }
+
+    public object? VisitGetExpression(Get _expression)
+    {
+        var value = _expression.Object.Accept(this);
+        if (value is Instance instance)
+        {
+            return instance.Get(_expression.Name);
+        }
+        
+        throw new RuntimeError(_expression.Name, "Only instances have properties.");
+    }
+
+    public object? VisitSetExpression(Set _expression)
+    {
+        var objectInstance = _expression.Object.Accept(this);
+        if (objectInstance is not Instance instance)
+        {
+            throw new RuntimeError(_expression.Name, "Only instances have fields.");
+        }
+
+        var value = _expression.Value.Accept(this);
+        instance.Set(_expression.Name, value);
+        return value;
+    }
+
+    public object VisitNewExpression(New _expression)
+    {
+        var classInstance = _expression.Call.Accept(this);
+        if (classInstance is not Instance instance)
+        {
+            throw new RuntimeError(_expression.Keyword, "Can only instantiate classes.");
+        }
+
+        return instance;
+    }
+    
+    private object LookUpVariable(Token.Token _name, Expression.Expression _expression)
+    {
+        if (_nativesFunctions.TryGetValue(_name.Lexeme, out var expression))
+        {
+            return expression;
+        }
+
+        var value = _definitions.Get(_name);
+        if (value != null) return value;
+
+        throw new RuntimeError(_name, $"Undefined variable '{_name.Lexeme}'.");
     }
 
     private static bool IsTruthy(object? _value)
@@ -244,7 +296,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
             foreach (var statement in returnStatement)
             {
                 if (statement.Value is null) continue;
-                
+
                 throw new RuntimeError(_statement.Type, "Cannot return a value from a void function.");
             }
         }
@@ -264,13 +316,14 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
                 case ReturnStatement returnStatement:
                     returnStatements.Add(returnStatement);
                     break;
-                
+
                 case BlockStatement block:
                     returnStatements.AddRange(GetBodyReturnStatement(block.Statements));
                     break;
                 case IfStatement ifStatement:
                     returnStatements.AddRange(GetBodyReturnStatement([ifStatement.ThenBranch]));
-                    if (ifStatement.ElseBranch != null) returnStatements.AddRange(GetBodyReturnStatement([ifStatement.ElseBranch]));
+                    if (ifStatement.ElseBranch != null)
+                        returnStatements.AddRange(GetBodyReturnStatement([ifStatement.ElseBranch]));
                     break;
                 case WhileStatement whileStatement:
                     returnStatements.AddRange(GetBodyReturnStatement([whileStatement.Body]));
@@ -287,5 +340,33 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         if (_statement.Value != null) value = _statement.Value.Accept(this);
 
         throw new Return(value);
+    }
+
+    public object? VisitClassStatement(ClassStatement _expression)
+    {
+        _definitions.Define(_expression.Name.Lexeme, null);
+        
+        var methods = new Dictionary<string, Function>();
+        
+        foreach (var method in _expression.Methods)
+        {
+            var function = new Function(method?.Function ?? throw new InvalidOperationException(), _definitions, method.Function.Name.Lexeme == "constructor");
+            methods[method.Function.Name.Lexeme ?? throw new InvalidOperationException()] = function;
+        }
+        
+        var classInstance = new Class(_expression, methods);
+        _definitions.Assign(_expression.Name, classInstance);
+        
+        return null;
+    }
+    
+    public object? VisitMethodStatement(MethodStatement _expression)
+    {
+        return null;
+    }
+
+    public object? VisitAttributeStatement(AttributeStatement _expression)
+    {
+        return null;
     }
 }

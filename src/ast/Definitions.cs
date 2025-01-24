@@ -12,7 +12,7 @@ public class Definitions(Definitions? _enclosing = null)
     {
         if (_values.TryGetValue(_name.Lexeme, out var value))
         {
-            if (_value?.GetType() != value?.GetType()) throw new RuntimeError(_name, $"Cannot assign '{_value}' to '{_name.Lexeme}' of type '{value?.GetType()}'.");
+            if (value != null && _value?.GetType() != value.GetType()) throw new RuntimeError(_name, $"Cannot assign '{_value}' to '{_name.Lexeme}' of type '{value.GetType()}'.");
 
             _values[_name.Lexeme] = _value;
             return;

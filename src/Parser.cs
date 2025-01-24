@@ -3,6 +3,8 @@
 using Token;
 using AST.Expression;
 using AST.Statement;
+using AST.Classes;
+using AST.Operations;
 
 // program        → statement* EOF ;
 // statement      → exprStmt | printStmt | varStmt | block | ifStmt ;
@@ -16,9 +18,14 @@ using AST.Statement;
 // funStmt        → "fun" type IDENTIFIER "(" parameters? ")" block ;
 // parameters     → type IDENTIFIER ( "," type IDENTIFIER )* ;
 // returnStmt     → "return" expression? ";" ;
+// classStmt      → "class" IDENTIFIER block;
+// attrStmt       → visibility type IDENTIFIER;
+// methodStmt     → visibility type IDENTIFIER "(" parameters? ")" block;
+// ctorStmt       → visibility "constructor" "(" parameters? ")" block;
 // declaration    → statement ;
 
 // type           → "float" | "double" | "int" | "string" | "bool" ;
+// visibility     → "public" | "private" ;
 
 // expression     → assignment ;
 // assignment     → IDENTIFIER "=" assignment | equality ;
@@ -30,8 +37,11 @@ using AST.Statement;
 // factor         → unary ( ( "/" | "*" ) unary )* ;
 // unary          → ( "!" | "-" ) unary | primary ;
 // call           → primary ( "(" arguments? ")" )* ;
-// primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
-// number         → literal ("D" | "F")? ;
+// new            → "new" IDENTIFIER "(" arguments? ")" ;
+// primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ( "." IDENTIFIER )* ;
+// number         → literal ("d" | "D" | "f" | "F")? ;
+
+// arguments      → expression ( "," expression )* ;
 
 public class ParseError : Exception;
 
@@ -40,10 +50,12 @@ public class RuntimeError(Token _token, string _message) : Exception(_message)
     public readonly Token Token = _token;
 }
 
-public class Parser(List<Token> _tokens)
+public class Parser(List<Token> _tokens, string _contentFile)
 {
     private static readonly List<TokenType> _VAR_TYPES =
-        [TokenType.FLOAT_TYPE, TokenType.DOUBLE_TYPE, TokenType.INT_TYPE, TokenType.STRING_TYPE, TokenType.BOOL_TYPE];
+    [
+        TokenType.FLOAT_TYPE, TokenType.DOUBLE_TYPE, TokenType.INT_TYPE, TokenType.STRING_TYPE, TokenType.BOOL_TYPE
+    ];
 
     private int _current;
 
@@ -99,6 +111,12 @@ public class Parser(List<Token> _tokens)
         return Peek().Type == _type;
     }
 
+    private bool CheckNext(TokenType _type)
+    {
+        if (_current + 1                  >= _tokens.Count) return false;
+        return _tokens[_current + 1].Type == _type;
+    }
+
     public List<Statement?> Parse()
     {
         List<Statement?> statements = [];
@@ -127,9 +145,13 @@ public class Parser(List<Token> _tokens)
     {
         try
         {
-            if (_VAR_TYPES.Contains(Peek().Type)) return VarStatement();
+            if (_VAR_TYPES.Contains(Peek().Type) ||
+                (Check(TokenType.IDENTIFIER) && CheckNext(TokenType.IDENTIFIER)))
+                return VarStatement();
 
+            if (Match(TokenType.CLASS)) return ClassStatement();
             if (Match(TokenType.FUN)) return FunctionStatement();
+
             return Statement();
         }
         catch (ParseError)
@@ -161,7 +183,7 @@ public class Parser(List<Token> _tokens)
     private ReturnStatement ReturnStatement()
     {
         var keyword = Previous();
-        var value   = !(Check(TokenType.SEMICOLON)) ? Expression() : null;
+        var value   = !Check(TokenType.SEMICOLON) ? Expression() : null;
 
         Consume(TokenType.SEMICOLON, "Expect ';' after value.");
         return new ReturnStatement(keyword, value);
@@ -176,7 +198,7 @@ public class Parser(List<Token> _tokens)
 
     private VarStatement VarStatement()
     {
-        var type = ConsumeMany(_VAR_TYPES, "Expect variable type.");
+        var type = ConsumeMany([.._VAR_TYPES,TokenType.IDENTIFIER], "Expect variable type.");
         var name = Consume(TokenType.IDENTIFIER, "Expect variable name.");
 
         Expression? initializer = null;
@@ -187,31 +209,78 @@ public class Parser(List<Token> _tokens)
         return new VarStatement(type, name, initializer);
     }
 
-    private FunctionStatement FunctionStatement()
+    private ClassStatement ClassStatement()
     {
-        var type = ConsumeMany([.._VAR_TYPES, TokenType.VOID_TYPE], "Expect return type.");
-        var name = Consume(TokenType.IDENTIFIER, "Expect function name.");
-        Consume(TokenType.LEFT_PAREN, "Expect '(' after function name.");
-        
-        List<(Token, Token)> parameters = [];
-        
-        if (!Check(TokenType.RIGHT_PAREN))
+        var name = Consume(TokenType.IDENTIFIER, "Expect class name.");
+        Consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+
+        List<MethodStatement?>    methods    = [];
+        List<AttributeStatement?> attributes = [];
+
+        while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
         {
-            do
+            var visibility = ConsumeMany([TokenType.PUBLIC, TokenType.PRIVATE], "Expect visibility.");
+            if (Check(TokenType.CONSTRUCTOR))
             {
-                if (parameters.Count >= 255)
+                if (methods.Any(_m => _m?.Function.Name.Lexeme == "constructor"))
                 {
-                    Error("Cannot have more than 255 parameters.", Peek());
+                    Error("Cannot have more than one constructor.", Peek());
                 }
 
-                var paramType = ConsumeMany(_VAR_TYPES, "Expect parameter type.");
-                var paramName = Consume(TokenType.IDENTIFIER, "Expect parameter name.");
-                parameters.Add((paramType, paramName));
-            } while (Match(TokenType.COMMA));
+                methods.Add(new MethodStatement(visibility, FunctionStatement(true)));
+            }
+            else
+            {
+                var attrType = ConsumeMany([.._VAR_TYPES, TokenType.VOID_TYPE, TokenType.IDENTIFIER], "Expect return type.");
+                var attrName = Consume(TokenType.IDENTIFIER, "Expect method name.");
+                if (Match(TokenType.LEFT_PAREN))
+                {
+                    if (methods.Any(_m => _m?.Function.Name.Lexeme == attrName.Lexeme))
+                    {
+                        Error("Cannot have more than one method with the same name.", attrName);
+                    }
+
+                    _current -= 3;
+                    var function = FunctionStatement();
+                    methods.Add(new MethodStatement(visibility, function));
+                }
+                else
+                {
+                    if (attrType.Type == TokenType.VOID_TYPE)
+                    {
+                        Error("Attributes cannot be void.", attrType);
+                    }
+
+                    attributes.Add(new AttributeStatement(visibility, new TypedToken(attrType, attrName)));
+                    Consume(TokenType.SEMICOLON, "Expect ';' after attribute.");
+                }
+            }
         }
 
-        Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
-        Consume(TokenType.LEFT_BRACE,  "Expect '{' before function body.");
+        Consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+        return new ClassStatement(name, attributes, methods);
+    }
+
+    private FunctionStatement FunctionStatement(bool _constructor = false)
+    {
+        Token type;
+        Token name;
+        if (!_constructor)
+        {
+            type = ConsumeMany([.._VAR_TYPES, TokenType.VOID_TYPE, TokenType.IDENTIFIER], "Expect return type.");
+            name = Consume(TokenType.IDENTIFIER, "Expect function name.");
+        }
+        else
+        {
+            Consume(TokenType.CONSTRUCTOR, "Expect constructor keyword.");
+            type = new Token(TokenType.VOID_TYPE, "void", null, 0);
+            name = Previous();
+        }
+
+        var parameters = ParseParameters();
+
+        Consume(TokenType.LEFT_BRACE, "Expect '{' before function body.");
 
         var body = BlockStatement();
         return new FunctionStatement(type, name, parameters, body.Statements);
@@ -264,7 +333,6 @@ public class Parser(List<Token> _tokens)
         {
             initializer = null;
         }
-        // else if (Match(TokenType.VAR))
         else if (_VAR_TYPES.Contains(Peek().Type))
         {
             initializer = VarStatement();
@@ -322,14 +390,17 @@ public class Parser(List<Token> _tokens)
         var equals = Previous();
         var value  = Assignment();
 
-        if (expression is Variable variable)
+        switch (expression)
         {
-            return new Assign(variable.Name, value);
+            case Variable variable:
+                return new Assign(variable.Name, value);
+            case Get get:
+                return new Set(get.Object, get.Name, value);
+            default:
+                Error("Invalid assignment target.", equals);
+
+                return expression;
         }
-
-        Error("Invalid assignment target.", equals);
-
-        return expression;
     }
 
     private Expression LogicalOr()
@@ -435,6 +506,11 @@ public class Parser(List<Token> _tokens)
             {
                 expression = FinishCall(expression);
             }
+            else if (Match(TokenType.DOT))
+            {
+                var name = Consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+                expression = new Get(expression, name);
+            }
             else
             {
                 break;
@@ -472,8 +548,16 @@ public class Parser(List<Token> _tokens)
         if (Match(TokenType.TRUE)) return new Literal(true);
         if (Match(TokenType.NIL)) return new Literal(null);
 
-        if (Match(TokenType.INT_TYPE, TokenType.FLOAT_TYPE, TokenType.DOUBLE_TYPE, TokenType.STRING, TokenType.STRING_TYPE)) 
+        if (Match(TokenType.INT_TYPE, TokenType.FLOAT_TYPE, TokenType.DOUBLE_TYPE, TokenType.STRING,
+                  TokenType.STRING_TYPE))
             return new Literal(Previous().Literal);
+
+        if (Match(TokenType.THIS)) return new This(Previous());
+
+        if (Match(TokenType.NEW))
+        {
+            return new New(Previous(), Call());
+        }
 
         if (Match(TokenType.IDENTIFIER)) return new Variable(Previous());
 
@@ -484,9 +568,37 @@ public class Parser(List<Token> _tokens)
         return new Grouping(expression);
     }
 
-    private static ParseError Error(string _message, Token _token)
+    private List<TypedToken> ParseParameters()
     {
-        UTILS.Utils.Error(_token.Line, _token.Type == TokenType.EOF ? " at end" : $" at '{_token.Lexeme}'", _message);
+        Consume(TokenType.LEFT_PAREN, "Expect '(' after function name.");
+        List<TypedToken> parameters = [];
+        if (Check(TokenType.RIGHT_PAREN))
+        {
+            Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+            return parameters;
+        }
+
+        do
+        {
+            if (parameters.Count >= 255)
+            {
+                Error("Cannot have more than 255 parameters.", Peek());
+            }
+
+            var paramType = ConsumeMany(_VAR_TYPES, "Expect parameter type.");
+            var paramName = Consume(TokenType.IDENTIFIER, "Expect parameter name.");
+            parameters.Add(new TypedToken(paramType, paramName));
+        } while (Match(TokenType.COMMA));
+
+        Consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+        return parameters;
+    }
+
+    private ParseError Error(string _message, Token _token)
+    {
+        UTILS.Utils.Error(_token.Line, _token.Type == TokenType.EOF ? " at end" : $" at '{_token.Lexeme}'", _message,
+                          _contentFile);
         return new ParseError();
     }
 
@@ -502,21 +614,23 @@ public class Parser(List<Token> _tokens)
             {
                 case TokenType.CLASS:
                 case TokenType.FUN:
-                // case TokenType.VAR:
                 case TokenType.FLOAT_TYPE:
                 case TokenType.DOUBLE_TYPE:
                 case TokenType.INT_TYPE:
                 case TokenType.STRING_TYPE:
                 case TokenType.BOOL_TYPE:
+                case TokenType.IDENTIFIER:
                 case TokenType.FOR:
                 case TokenType.IF:
                 case TokenType.WHILE:
                 case TokenType.PRINT:
                 case TokenType.RETURN:
                     return;
+                
+                default:
+                    Advance();
+                    break;
             }
-
-            Advance();
         }
     }
 }

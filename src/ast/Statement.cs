@@ -1,4 +1,7 @@
-﻿namespace AST.Statement;
+﻿using AST.Classes;
+using Token;
+
+namespace AST.Statement;
 
 using Expression;
 
@@ -20,6 +23,9 @@ public interface IStatementVisitor<out T>
     T VisitWhileStatement(WhileStatement           _expression);
     T VisitFunctionStatement(FunctionStatement     _expression);
     T VisitReturnStatement(ReturnStatement         _expression);
+    T VisitClassStatement(ClassStatement           _expression);
+    T VisitMethodStatement(MethodStatement         _expression);
+    T VisitAttributeStatement(AttributeStatement   _expression);
 }
 
 public class ExpressionStatement(Expression _expression) : Statement
@@ -88,18 +94,16 @@ public class WhileStatement(Expression _condition, Statement _body) : Statement
 }
 
 public class FunctionStatement(
-    Token.Token                      _type,
-    Token.Token                      _name,
-    List<(Token.Token, Token.Token)> _parameters,
-    List<Statement?>                 _body) : Statement
+    Token.Token      _type,
+    Token.Token      _name,
+    List<TypedToken> _parameters,
+    List<Statement?> _body) : Statement
 {
     public Token.Token Type { get; } = _type;
 
-    public Token.Token Name { get; } = _name;
-
-    // public List<Token.Token> Parameters { get; } = _parameters;
-    public List<(Token.Token, Token.Token)> Parameters { get; } = _parameters;
-    public List<Statement?>                 Body       { get; } = _body;
+    public Token.Token      Name       { get; } = _name;
+    public List<TypedToken> Parameters { get; } = _parameters;
+    public List<Statement?> Body       { get; } = _body;
 
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {

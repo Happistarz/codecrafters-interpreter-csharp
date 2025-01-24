@@ -1,6 +1,6 @@
 ﻿using Token;
 
-namespace AST;
+namespace AST.Operations;
 
 public interface IOperations
 {

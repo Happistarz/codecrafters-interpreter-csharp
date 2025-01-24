@@ -30,30 +30,37 @@ public enum TokenType
     // Literals
     IDENTIFIER,
     STRING,
-    NUMBER,
 
     // Keywords
     AND,
-    BOOL_TYPE,
-    CLASS,
-    DOUBLE_TYPE,
     ELSE,
     FALSE,
-    FLOAT_TYPE,
     FOR,
     FUN,
     IF,
-    INT_TYPE,
     NIL,
     OR,
     PRINT,
     RETURN,
+    TRUE,
+    WHILE,
+
+    // Types
+    BOOL_TYPE,
+    DOUBLE_TYPE,
+    FLOAT_TYPE,
+    INT_TYPE,
     STRING_TYPE,
+    VOID_TYPE,
+
+    // Class keywords
+    CLASS,
+    CONSTRUCTOR,
+    NEW,
+    PRIVATE,
+    PUBLIC,
     SUPER,
     THIS,
-    TRUE,
-    VOID_TYPE,
-    WHILE,
 
     EOF
 }
@@ -67,6 +74,12 @@ public class Token(TokenType _type, string _lexeme, object? _literal, int _line)
 
     public override string ToString()
     {
-        return $"{Type} {Lexeme} {Utils.GetLiteralString(Literal,"null")}";
+        return $"{Type} {Lexeme} {Utils.GetLiteralString(Literal, "null")}";
     }
+}
+
+public struct TypedToken(Token _type, Token _token)
+{
+    public Token Type  { get; } = _type;
+    public Token Token { get; } = _token;
 }
