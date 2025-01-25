@@ -17,27 +17,28 @@ public class ClassStatement(
         return _statementVisitor.VisitClassStatement(this);
     }
 }
-
 public class MethodStatement(
     Token.Token       _visibility,
+    bool              _static,
     FunctionStatement _function) : Statement.Statement
 {
     public Token.Token       Visibility { get; } = _visibility;
+    public bool              Static     { get; } = _static;
     public FunctionStatement Function   { get; } = _function;
 
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {
-        return _statementVisitor.VisitMethodStatement(this);
+        throw new NotImplementedException();
     }
 }
 
-public class AttributeStatement(Token.Token _visibility, TypedToken _attribute) : Statement.Statement
+public class AttributeStatement(Token.Token _visibility, bool _static, VarStatement _var) : Statement.Statement
 {
     public Token.Token Visibility { get; } = _visibility;
-    public TypedToken  Attribute  { get; } = _attribute;
-
+    public bool       Static     { get; } = _static;
+    public VarStatement Var       { get; } = _var;
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {
-        return _statementVisitor.VisitAttributeStatement(this);
+        throw new NotImplementedException();
     }
 }

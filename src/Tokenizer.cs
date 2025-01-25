@@ -14,6 +14,7 @@ public class Tokenizer(string _content)
             { "for", TokenType.FOR },
             { "fun", TokenType.FUN },
             { "if", TokenType.IF },
+            { "import", TokenType.IMPORT },
             { "nil", TokenType.NIL },
             { "or", TokenType.OR },
             { "print", TokenType.PRINT },
@@ -34,6 +35,7 @@ public class Tokenizer(string _content)
             { "public", TokenType.PUBLIC },
             { "private", TokenType.PRIVATE },
             { "super", TokenType.SUPER },
+            { "static", TokenType.STATIC },
             { "this", TokenType.THIS },
         };
 
@@ -237,6 +239,15 @@ public class Tokenizer(string _content)
                 AddToken(TokenType.FLOAT_TYPE, value);
                 break;
             default:
+                if (_content.Substring(_start, _current - _start).Contains('.'))
+                {
+                    value = double.Parse(
+                        _content.Substring(_start, _current - _start).Replace(',', '.')
+                        , CultureInfo.InvariantCulture);
+                    AddToken(TokenType.DOUBLE_TYPE, value);
+                    break;
+                }
+
                 value = int.Parse(_content.AsSpan(_start, _current - _start), CultureInfo.InvariantCulture);
                 AddToken(TokenType.INT_TYPE, value);
                 break;

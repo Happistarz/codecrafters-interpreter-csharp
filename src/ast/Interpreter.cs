@@ -10,6 +10,8 @@ namespace AST;
 
 public static class Interpreter
 {
+    public static string MainFile { get; set; } = string.Empty;
+
     public static string Interpret(Expression.Expression? _expression)
     {
         try
@@ -31,6 +33,8 @@ public static class Interpreter
     public static string Interpret(List<Statement.Statement?> _statements)
     {
         InterpreterEvaluator evaluator = new();
+        evaluator.SetMainFile();
+        
         try
         {
             foreach (var statement in _statements)
@@ -54,13 +58,20 @@ public static class Interpreter
 
 public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisitor<object?>
 {
-    private Definitions _definitions = new();
+    private          Definitions  _definitions   = new();
+    private readonly List<string> _importedFiles = [];
+    private readonly List<string> _processImports = [];
 
     private readonly Dictionary<string, ICallable> _nativesFunctions = new()
     {
         { "clock", new Clock() },
         { "currentDateTime", new CurrentDateTime() }
     };
+    
+    public void SetMainFile()
+    {
+        _importedFiles.Add(Path.GetFullPath(Interpreter.MainFile));
+    }
 
     public object? VisitLiteralExpression(Literal _expression)
     {
@@ -134,7 +145,7 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     {
         var callee    = _expression.Callee.Accept(this);
         var arguments = _expression.Arguments.Select(_argument => _argument.Accept(this)).ToList();
-
+        
         if (callee is not ICallable function)
         {
             throw new RuntimeError(_expression.Paren, "Can only call functions and classes.");
@@ -157,25 +168,34 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
     public object? VisitGetExpression(Get _expression)
     {
         var value = _expression.Object.Accept(this);
-        if (value is Instance instance)
+        return value switch
         {
-            return instance.Get(_expression.Name);
-        }
-        
-        throw new RuntimeError(_expression.Name, "Only instances have properties.");
+            Class @class      => @class.FindStaticMember(_expression.Name.Lexeme),
+            Instance instance => instance.Get(_expression.Name),
+            _                 => throw new RuntimeError(_expression.Name, "Only instances have properties.")
+        };
     }
 
     public object? VisitSetExpression(Set _expression)
     {
         var objectInstance = _expression.Object.Accept(this);
-        if (objectInstance is not Instance instance)
+        switch (objectInstance)
         {
-            throw new RuntimeError(_expression.Name, "Only instances have fields.");
+            case Class @class:
+            {
+                var value = _expression.Value.Accept(this);
+                @class.SetStaticAttribute(_expression.Name, value);
+                return value;
+            }
+            case Instance instance:
+            {
+                var value = _expression.Value.Accept(this);
+                instance.Set(_expression.Name, value);
+                return value;
+            }
+            default:
+                throw new RuntimeError(_expression.Name, "Only instances have fields.");
         }
-
-        var value = _expression.Value.Accept(this);
-        instance.Set(_expression.Name, value);
-        return value;
     }
 
     public object VisitNewExpression(New _expression)
@@ -356,17 +376,39 @@ public class InterpreterEvaluator : IExpressionVisitor<object?>, IStatementVisit
         
         var classInstance = new Class(_expression, methods);
         _definitions.Assign(_expression.Name, classInstance);
+        classInstance.ClassStatement.Attributes.ForEach(_attribute =>
+        {
+            var value = _attribute?.Var.Initializer?.Accept(this);
+            classInstance.SetStaticAttribute(_attribute?.Var.Name, value);
+        });
         
         return null;
     }
     
-    public object? VisitMethodStatement(MethodStatement _expression)
+    public object? VisitImportStatement(ImportStatement _expression)
     {
-        return null;
-    }
+        var path = _expression.Path.Literal?.ToString();
+        if (path == null) throw new RuntimeError(_expression.Path, "Invalid import path.");
 
-    public object? VisitAttributeStatement(AttributeStatement _expression)
-    {
+        var fullPath = Path.GetFullPath(path);
+        if (!File.Exists(fullPath)) throw new RuntimeError(_expression.Path, $"File not found for: {fullPath}");
+
+        if (_importedFiles.Contains(fullPath)) return null;
+        
+        if (_processImports.Contains(fullPath)) throw new RuntimeError(_expression.Path, "Circular imports are not allowed.");
+        
+        _processImports.Add(fullPath);
+
+        var statements = Program.LoadFile(fullPath);
+        _importedFiles.Add(fullPath);
+
+        foreach (var statement in statements)
+        {
+            statement?.Accept(this);
+        }
+        
+        _processImports.Remove(fullPath);
+
         return null;
     }
 }

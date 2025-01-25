@@ -175,37 +175,15 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
 
         foreach (var attribute in _expression.Attributes)
         {
-            builder.Append(attribute?.Accept(this));
+            builder.Append(attribute?.Var.Accept(this));
         }
 
         builder.Append('\n');
 
         foreach (var method in _expression.Methods)
         {
-            builder.Append(method?.Accept(this));
+            builder.Append(method?.Function.Accept(this));
         }
-
-        return Parenthesize(builder.ToString());
-    }
-
-    public string VisitMethodStatement(MethodStatement _expression)
-    {
-        var builder = new StringBuilder();
-
-        builder.Append($"{_expression.Visibility.Lexeme} method :");
-
-        builder.Append(_expression.Function.Accept(this));
-
-        return Parenthesize(builder.ToString());
-    }
-
-    public string VisitAttributeStatement(AttributeStatement _expression)
-    {
-        var builder = new StringBuilder();
-
-        builder.Append($"{_expression.Visibility.Lexeme} attribute ");
-
-        builder.Append($"{_expression.Attribute.Type.Lexeme} {_expression.Attribute.Token.Lexeme}");
 
         return Parenthesize(builder.ToString());
     }
@@ -283,11 +261,20 @@ public class AstPrinter : IExpressionVisitor<string>, IStatementVisitor<string>
         builder.Append(' ');
         builder.Append(_expression.ThenBranch.Accept(this));
 
-        if (_expression.ElseBranch != null)
-        {
-            builder.Append(' ');
-            builder.Append(_expression.ElseBranch.Accept(this));
-        }
+        if (_expression.ElseBranch == null) return Parenthesize(builder.ToString());
+        
+        builder.Append(' ');
+        builder.Append(_expression.ElseBranch.Accept(this));
+
+        return Parenthesize(builder.ToString());
+    }
+    
+    public string VisitImportStatement(ImportStatement _expression)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append("import ");
+        builder.Append(_expression.Path.Lexeme);
 
         return Parenthesize(builder.ToString());
     }

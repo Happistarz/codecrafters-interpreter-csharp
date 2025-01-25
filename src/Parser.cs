@@ -149,6 +149,7 @@ public class Parser(List<Token> _tokens, string _contentFile)
                 (Check(TokenType.IDENTIFIER) && CheckNext(TokenType.IDENTIFIER)))
                 return VarStatement();
 
+            if (Match(TokenType.IMPORT)) return ImportStatement();
             if (Match(TokenType.CLASS)) return ClassStatement();
             if (Match(TokenType.FUN)) return FunctionStatement();
 
@@ -178,6 +179,14 @@ public class Parser(List<Token> _tokens, string _contentFile)
         var value = Expression();
         Consume(TokenType.SEMICOLON, "Expect ';' after value.");
         return new PrintStatement(value);
+    }
+
+    private ImportStatement ImportStatement()
+    {
+        var path = Consume(TokenType.STRING, "Expected import path.");
+        Consume(TokenType.SEMICOLON, "Expected ';' after path.");
+
+        return new ImportStatement(path);
     }
 
     private ReturnStatement ReturnStatement()
@@ -220,6 +229,8 @@ public class Parser(List<Token> _tokens, string _contentFile)
         while (!Check(TokenType.RIGHT_BRACE) && !IsAtEnd())
         {
             var visibility = ConsumeMany([TokenType.PUBLIC, TokenType.PRIVATE], "Expect visibility.");
+            var @static = Match(TokenType.STATIC);
+            
             if (Check(TokenType.CONSTRUCTOR))
             {
                 if (methods.Any(_m => _m?.Function.Name.Lexeme == "constructor"))
@@ -227,7 +238,7 @@ public class Parser(List<Token> _tokens, string _contentFile)
                     Error("Cannot have more than one constructor.", Peek());
                 }
 
-                methods.Add(new MethodStatement(visibility, FunctionStatement(true)));
+                methods.Add(new MethodStatement(visibility, @static ,FunctionStatement(true)));
             }
             else
             {
@@ -242,7 +253,7 @@ public class Parser(List<Token> _tokens, string _contentFile)
 
                     _current -= 3;
                     var function = FunctionStatement();
-                    methods.Add(new MethodStatement(visibility, function));
+                    methods.Add(new MethodStatement(visibility, @static, function));
                 }
                 else
                 {
@@ -251,8 +262,8 @@ public class Parser(List<Token> _tokens, string _contentFile)
                         Error("Attributes cannot be void.", attrType);
                     }
 
-                    attributes.Add(new AttributeStatement(visibility, new TypedToken(attrType, attrName)));
-                    Consume(TokenType.SEMICOLON, "Expect ';' after attribute.");
+                    _current -= 2;
+                    attributes.Add(new AttributeStatement(visibility,@static, VarStatement()));
                 }
             }
         }

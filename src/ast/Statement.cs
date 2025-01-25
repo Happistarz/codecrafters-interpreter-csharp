@@ -24,8 +24,7 @@ public interface IStatementVisitor<out T>
     T VisitFunctionStatement(FunctionStatement     _expression);
     T VisitReturnStatement(ReturnStatement         _expression);
     T VisitClassStatement(ClassStatement           _expression);
-    T VisitMethodStatement(MethodStatement         _expression);
-    T VisitAttributeStatement(AttributeStatement   _expression);
+    T VisitImportStatement(ImportStatement         _expression);
 }
 
 public class ExpressionStatement(Expression _expression) : Statement
@@ -119,5 +118,15 @@ public class ReturnStatement(Token.Token _keyword, Expression? _value) : Stateme
     public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
     {
         return _statementVisitor.VisitReturnStatement(this);
+    }
+}
+
+public class ImportStatement(Token.Token _path) : Statement
+{
+    public Token.Token Path { get; } = _path;
+
+    public override T Accept<T>(IStatementVisitor<T> _statementVisitor)
+    {
+        return _statementVisitor.VisitImportStatement(this);
     }
 }

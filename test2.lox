@@ -1,0 +1,5 @@
+﻿import "test.lox";
+
+class Math {
+  public static float PI = 3.141592653589793;
+}

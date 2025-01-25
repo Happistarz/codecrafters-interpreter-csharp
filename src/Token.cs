@@ -38,6 +38,7 @@ public enum TokenType
     FOR,
     FUN,
     IF,
+    IMPORT,
     NIL,
     OR,
     PRINT,
@@ -60,6 +61,7 @@ public enum TokenType
     PRIVATE,
     PUBLIC,
     SUPER,
+    STATIC,
     THIS,
 
     EOF

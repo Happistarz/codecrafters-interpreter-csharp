@@ -8,4 +8,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="src\ast\Classes\ClassInterpreters.cs" />
+  </ItemGroup>
+
 </Project>

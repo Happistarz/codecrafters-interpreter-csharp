@@ -1,7 +1,8 @@
 using AST;
+using AST.Statement;
 using Token;
 
-class Program
+static class Program
 {
     public static           bool         HadError        = false;
     public static           bool         HadRuntimeError = false;
@@ -16,14 +17,12 @@ class Program
 
         var command  = _args[0];
         var filename = _args[1];
-
-
+        
         var fileContents = File.ReadAllText(filename);
 
-
-        //Uncomment this block to pass the first stage
         if (!string.IsNullOrEmpty(fileContents))
         {
+            Interpreter.MainFile = filename;
             Run(command, fileContents);
 
             if (HadError) Environment.Exit(65);
@@ -81,5 +80,17 @@ class Program
                 // Console.WriteLine(Printer.Print(statements));
                 break;
         }
+    }
+    
+    public static List<Statement?> LoadFile(string? _filename)
+    {
+        if (string.IsNullOrEmpty(_filename)) return [];
+        
+        var fileContents = File.ReadAllText(_filename);
+        Tokenizer tokenizer = new(fileContents);
+        tokenizer.Scan();
+        
+        Parser.Parser parser = new(tokenizer.GetTokens(), fileContents);
+        return parser.Parse();
     }
 }
